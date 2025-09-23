@@ -86,7 +86,19 @@ const Generator = () => {
       if (url) {
         setGeneratedPhoto(url)
         setIsImageLoading(false)
+        setIsGeneratingImage(false)
+        setIsRegeneratingImage(false)
       }
+    } else if (imageJobStatus?.status === 'failed') {
+      // Clear loading states if job failed
+      setIsImageLoading(false)
+      setIsGeneratingImage(false)
+      setIsRegeneratingImage(false)
+      toast({ 
+        title: "Generation Failed", 
+        description: "Failed to generate image. Please try again.", 
+        variant: "destructive" 
+      })
     }
   }, [imageJobStatus])
 
@@ -299,10 +311,11 @@ const Generator = () => {
     } catch (err) {
       toast({ title: "Error", description: "Failed to generate photo.", variant: "destructive" })
       setGeneratedPhoto(null)
-    } finally {
       setIsGeneratingImage(false)
       setIsImageLoading(false)
     }
+    // Note: Don't clear loading states in finally block since we use fire-and-forget webhook
+    // Loading states will be cleared when realtime updates indicate completion
   }
 
   // ---------- Regenerate AI Image ----------
@@ -437,10 +450,11 @@ const Generator = () => {
     } catch (err) {
       toast({ title: "Error", description: "Failed to regenerate photo.", variant: "destructive" })
       setGeneratedPhoto(null)
-    } finally {
       setIsRegeneratingImage(false)
       setIsImageLoading(false)
     }
+    // Note: Don't clear loading states in finally block since we use fire-and-forget webhook
+    // Loading states will be cleared when realtime updates indicate completion
   }
 
   // ---------- Step 3: Generate Video ----------
