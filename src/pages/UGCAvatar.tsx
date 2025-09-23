@@ -104,16 +104,25 @@ const UGCAvatar = () => {
             const result = await converterResponse.json();
             console.log('Converter response data:', result);
             console.log('Result keys:', Object.keys(result));
-            if (result.url) {
+            // Check for URL in the nested data structure
+            const responseData = result.data || result;
+            if (responseData.url) {
+              imageUrl = responseData.url;
+              console.log('Image successfully converted to URL:', responseData.url);
+            } else if (responseData.imageUrl) {
+              imageUrl = responseData.imageUrl;
+              console.log('Image successfully converted to URL:', responseData.imageUrl);
+            } else if (result.url) {
               imageUrl = result.url;
               console.log('Image successfully converted to URL:', result.url);
-            } else if (result.imageUrl) {  // Add this condition to check for imageUrl
+            } else if (result.imageUrl) {
               imageUrl = result.imageUrl;
               console.log('Image successfully converted to URL:', result.imageUrl);
             } else {
               // If conversion succeeded but no URL returned, fall back to data URL
               console.warn('Image conversion succeeded but no URL returned, falling back to data URL');
               console.warn('Full result:', result);
+              console.warn('Response data:', responseData);
               imageUrl = uploadedProduct;
             }
           } else {
@@ -234,16 +243,25 @@ const UGCAvatar = () => {
             const result = await converterResponse.json();
             console.log('Converter response data:', result);
             console.log('Result keys:', Object.keys(result));
-            if (result.url) {
+            // Check for URL in the nested data structure
+            const responseData = result.data || result;
+            if (responseData.url) {
+              imageUrl = responseData.url;
+              console.log('Image successfully converted to URL:', responseData.url);
+            } else if (responseData.imageUrl) {
+              imageUrl = responseData.imageUrl;
+              console.log('Image successfully converted to URL:', responseData.imageUrl);
+            } else if (result.url) {
               imageUrl = result.url;
               console.log('Image successfully converted to URL:', result.url);
-            } else if (result.imageUrl) {  // Add this condition to check for imageUrl
+            } else if (result.imageUrl) {
               imageUrl = result.imageUrl;
               console.log('Image successfully converted to URL:', result.imageUrl);
             } else {
               // If conversion succeeded but no URL returned, fall back to data URL
               console.warn('Image conversion succeeded but no URL returned, falling back to data URL');
               console.warn('Full result:', result);
+              console.warn('Response data:', responseData);
               imageUrl = uploadedProduct;
             }
           } else {

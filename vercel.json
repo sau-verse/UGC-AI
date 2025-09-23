@@ -6,6 +6,12 @@
   "functions": {
     "api/image-converter.js": {
       "maxDuration": 300
+    },
+    "api/webhook-generate.js": {
+      "maxDuration": 30
+    },
+    "api/webhook-regenerate.js": {
+      "maxDuration": 30
     }
   },
   "rewrites": [
