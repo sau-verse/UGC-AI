@@ -36,7 +36,8 @@ exports.handler = async (event, context) => {
 
   try {
     const payload = JSON.parse(event.body);
-    console.log('Received payload:', JSON.stringify(payload, null, 2));
+    console.log('Received payload keys:', Object.keys(payload));
+    console.log('Payload size:', JSON.stringify(payload).length, 'bytes');
 
     // Forward the request to the n8n webhook
     const n8nWebhookUrl = 'https://n8n.reclad.site/webhook/c82b79e7-a7f4-4527-a0a5-f126d29a93cb';
