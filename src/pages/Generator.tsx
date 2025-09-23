@@ -298,7 +298,7 @@ const Generator = () => {
       console.log('Sending payload to webhook:', payload);
       
       // Fire-and-forget webhook call - don't wait for response since we use realtime
-      fetch('/webhook-generate', {
+      fetch('/api/webhook-generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'image/*,application/octet-stream,application/json' },
         body: JSON.stringify(payload),
@@ -434,7 +434,7 @@ const Generator = () => {
       console.log('Sending regeneration payload to webhook:', payload);
 
       // Fire-and-forget webhook call - don't wait for response since we use realtime
-      fetch('/webhook-regenerate', {
+      fetch('/api/webhook-regenerate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -72,6 +72,42 @@ src/
 - `npm run lint` - Run ESLint
 - `npm run format` - Format code with Prettier
 
+## Deployment
+
+### Vercel Deployment
+
+This project is configured for deployment on Vercel. The live application is available at: [https://ugcgen-ai.vercel.app/](https://ugcgen-ai.vercel.app/)
+
+#### Vercel Configuration
+
+The project includes a `vercel.json` configuration file with the following settings:
+
+- **Framework**: Vite
+- **Build Command**: `npm run build`
+- **Output Directory**: `dist`
+- **Install Command**: `npm install`
+
+#### Environment Variables
+
+Set these environment variables in your Vercel project settings:
+
+- `VITE_SUPABASE_URL` - Your Supabase project URL
+- `VITE_SUPABASE_ANON_KEY` - Your Supabase anonymous key
+
+#### API Routes
+
+The project includes Vercel API routes in the `/api` directory:
+
+- `/api/webhook-generate` - Image generation webhook
+- `/api/webhook-regenerate` - Image regeneration webhook  
+- `/api/image-converter` - Image conversion service
+
+#### Deployment Steps
+
+1. Connect your GitHub repository to Vercel
+2. Set the environment variables in Vercel dashboard
+3. Deploy automatically on every push to main branch
+
 ## Learn More
 
 To learn more about the technologies used in this project:
@@ -80,3 +116,4 @@ To learn more about the technologies used in this project:
 - [Vite Documentation](https://vitejs.dev/)
 - [Supabase Documentation](https://supabase.io/docs)
 - [Tailwind CSS Documentation](https://tailwindcss.com/)
+- [Vercel Documentation](https://vercel.com/docs)
