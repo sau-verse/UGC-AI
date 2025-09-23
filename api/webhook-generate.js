@@ -1,4 +1,4 @@
-const https = require('https');
+import https from 'https';
 
 export default async function handler(req, res) {
   // Set CORS headers
@@ -20,10 +20,13 @@ export default async function handler(req, res) {
   console.log('Webhook function called:', req.method, req.url);
   
   try {
-    const { prompt, style, aspect_ratio, user_id, job_id } = req.body;
+    const { prompt, style, aspect_ratio, user_id, job_id, id, image_url, image_data_url } = req.body;
+
+    // Use id as job_id if job_id is not provided (for backward compatibility)
+    const actualJobId = job_id || id;
 
     // Validate required fields
-    if (!prompt || !user_id || !job_id) {
+    if (!prompt || !user_id || !actualJobId) {
       console.log('Missing required fields');
       return res.status(400).json({ 
         error: 'Missing required fields: prompt, user_id, job_id' 
@@ -36,8 +39,15 @@ export default async function handler(req, res) {
       style: style || 'realistic',
       aspect_ratio: aspect_ratio || '16:9',
       user_id: user_id,
-      job_id: job_id
+      job_id: actualJobId
     };
+
+    // Add image data if provided
+    if (image_url) {
+      payload.image_url = image_url;
+    } else if (image_data_url) {
+      payload.image_data_url = image_data_url;
+    }
 
     console.log('Sending payload to external webhook:', payload);
 
