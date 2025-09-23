@@ -20,90 +20,95 @@ export default async function handler(req, res) {
   console.log('Regenerate webhook function called:', req.method, req.url);
   
   try {
-    const { prompt, style, aspect_ratio, user_id, job_id } = req.body;
+    const payload = req.body;
+    console.log('Received regenerate payload keys:', Object.keys(payload));
+    console.log('Regenerate payload size:', JSON.stringify(payload).length, 'bytes');
 
-    // Validate required fields
-    if (!prompt || !user_id || !job_id) {
-      console.log('Missing required fields');
-      return res.status(400).json({ 
-        error: 'Missing required fields: prompt, user_id, job_id' 
-      });
-    }
-
-    // Prepare the payload for the external webhook
-    const payload = {
-      prompt: prompt,
-      style: style || 'realistic',
-      aspect_ratio: aspect_ratio || '16:9',
-      user_id: user_id,
-      job_id: job_id
-    };
-
-    console.log('Sending regenerate payload to external webhook:', payload);
-
-    // Make request to external webhook
-    const webhookUrl = 'https://n8n.reclad.site/webhook/6c5a5941-63b0-463e-8a16-0c7e08882c72';
+    // Forward the request to the n8n webhook
+    const n8nWebhookUrl = 'https://n8n.reclad.site/webhook/6c5a5941-63b0-463e-8a16-0c7e08882c72';
+    console.log('Forwarding regenerate request to n8n webhook:', n8nWebhookUrl);
     
-    const postData = JSON.stringify(payload);
-    
-    const options = {
+    // Fire-and-forget request to n8n - don't wait for response
+    makeRequest(n8nWebhookUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(postData)
+        'Accept': 'image/*,application/octet-stream,application/json'
       },
-      timeout: 30000 // 30 second timeout
-    };
-
-    const webhookResponse = await new Promise((resolve, reject) => {
-      const webhookReq = https.request(webhookUrl, options, (webhookRes) => {
-        let data = '';
-        
-        webhookRes.on('data', (chunk) => {
-          data += chunk;
-        });
-        
-        webhookRes.on('end', () => {
-          try {
-            const responseData = JSON.parse(data);
-            resolve({
-              statusCode: webhookRes.statusCode,
-              data: responseData
-            });
-          } catch (error) {
-            resolve({
-              statusCode: webhookRes.statusCode,
-              data: data
-            });
-          }
-        });
-      });
-
-      webhookReq.on('error', (error) => {
-        console.error('Webhook request error:', error);
-        reject(error);
-      });
-
-      webhookReq.on('timeout', () => {
-        console.error('Webhook request timeout');
-        webhookReq.destroy();
-        reject(new Error('Request timeout'));
-      });
-
-      webhookReq.write(postData);
-      webhookReq.end();
+      body: JSON.stringify(payload)
+    }).then(response => {
+      console.log('n8n regenerate response status:', response.statusCode);
+      console.log('n8n regenerate response headers:', response.headers);
+      console.log('n8n regenerate response body length:', response.body ? response.body.length : 0);
+    }).catch(error => {
+      console.error('n8n regenerate request failed:', error);
     });
 
-    console.log('Regenerate webhook response:', webhookResponse);
-
-    // Return the response from the external webhook
-    return res.status(webhookResponse.statusCode).json(webhookResponse.data);
+    // Return immediately - let realtime handle status updates
+    return res.status(200).json({ 
+      success: true, 
+      message: 'Image regeneration started',
+      jobId: payload.id
+    });
 
   } catch (error) {
-    console.error('Error in regenerate webhook function:', error);
+    console.error('Error processing regenerate webhook:', error);
+    console.error('Error stack:', error.stack);
+    
     return res.status(500).json({ 
       error: 'Internal server error',
-      message: error.message 
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
+}
+
+// Helper function to make HTTP requests with proper timeout handling
+function makeRequest(url, options) {
+  return new Promise((resolve, reject) => {
+    console.log('Making regenerate request to:', url);
+    console.log('Regenerate request options:', options);
+    
+    const requestOptions = {
+      method: options.method || 'GET',
+      headers: options.headers || {},
+      timeout: 300000 // 5 minutes timeout
+    };
+
+    const req = https.request(url, requestOptions, (res) => {
+      console.log('Regenerate response received:', res.statusCode);
+      let data = '';
+      
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+      
+      res.on('end', () => {
+        console.log('Regenerate response completed, data length:', data.length);
+        resolve({
+          statusCode: res.statusCode,
+          headers: res.headers,
+          body: data
+        });
+      });
+    });
+
+    req.on('error', (error) => {
+      console.error('Regenerate request error:', error);
+      reject(error);
+    });
+
+    req.on('timeout', () => {
+      console.error('Regenerate request timeout after 5 minutes');
+      req.destroy();
+      reject(new Error('Request timeout after 5 minutes'));
+    });
+
+    if (options.body) {
+      console.log('Writing regenerate body to request');
+      req.write(options.body);
+    }
+    
+    req.end();
+  });
 }

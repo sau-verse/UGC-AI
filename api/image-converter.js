@@ -20,88 +20,91 @@ export default async function handler(req, res) {
   console.log('Image converter function called:', req.method, req.url);
   
   try {
-    const { image_url, user_id, job_id } = req.body;
-
-    // Validate required fields
-    if (!image_url || !user_id || !job_id) {
-      console.log('Missing required fields');
-      return res.status(400).json({ 
-        error: 'Missing required fields: image_url, user_id, job_id' 
-      });
-    }
-
-    // Prepare the payload for the external service
-    const payload = {
-      image_url: image_url,
-      user_id: user_id,
-      job_id: job_id
-    };
-
-    console.log('Sending image conversion payload:', payload);
-
-    // Make request to external image converter service
-    const converterUrl = 'https://reclad.site/n8n_binary';
+    console.log('Image converter endpoint called');
+    console.log('Content-Type:', req.headers['content-type']);
+    console.log('Body length:', req.body ? JSON.stringify(req.body).length : 0);
     
-    const postData = JSON.stringify(payload);
+    // Forward the multipart form data to the reclad.site API
+    const recladApiUrl = 'https://reclad.site/n8n_binary/n8n-to-url-converter.php';
+    console.log('Forwarding to reclad.site API:', recladApiUrl);
     
-    const options = {
+    const response = await makeRequest(recladApiUrl, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(postData)
+        'Content-Type': req.headers['content-type'] || 'multipart/form-data'
       },
-      timeout: 300000 // 5 minute timeout for image processing
-    };
-
-    const converterResponse = await new Promise((resolve, reject) => {
-      const converterReq = https.request(converterUrl, options, (converterRes) => {
-        let data = '';
-        
-        converterRes.on('data', (chunk) => {
-          data += chunk;
-        });
-        
-        converterRes.on('end', () => {
-          try {
-            const responseData = JSON.parse(data);
-            resolve({
-              statusCode: converterRes.statusCode,
-              data: responseData
-            });
-          } catch (error) {
-            resolve({
-              statusCode: converterRes.statusCode,
-              data: data
-            });
-          }
-        });
-      });
-
-      converterReq.on('error', (error) => {
-        console.error('Image converter request error:', error);
-        reject(error);
-      });
-
-      converterReq.on('timeout', () => {
-        console.error('Image converter request timeout');
-        converterReq.destroy();
-        reject(new Error('Request timeout'));
-      });
-
-      converterReq.write(postData);
-      converterReq.end();
+      body: req.body
     });
 
-    console.log('Image converter response:', converterResponse);
+    console.log('Reclad API response status:', response.statusCode);
+    console.log('Reclad API response headers:', response.headers);
+    console.log('Reclad API response body length:', response.body ? response.body.length : 0);
 
-    // Return the response from the external service
-    return res.status(converterResponse.statusCode).json(converterResponse.data);
+    // Return the response from the reclad.site API
+    return res.status(response.statusCode).json({
+      success: true,
+      data: response.body,
+      statusCode: response.statusCode
+    });
 
   } catch (error) {
     console.error('Error in image converter function:', error);
+    console.error('Error stack:', error.stack);
+    
     return res.status(500).json({ 
       error: 'Internal server error',
-      message: error.message 
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
+}
+
+// Helper function to make HTTP requests with proper timeout handling
+function makeRequest(url, options) {
+  return new Promise((resolve, reject) => {
+    console.log('Making image converter request to:', url);
+    console.log('Image converter request options:', options);
+    
+    const requestOptions = {
+      method: options.method || 'GET',
+      headers: options.headers || {},
+      timeout: 300000 // 5 minutes timeout
+    };
+
+    const req = https.request(url, requestOptions, (res) => {
+      console.log('Image converter response received:', res.statusCode);
+      let data = '';
+      
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+      
+      res.on('end', () => {
+        console.log('Image converter response completed, data length:', data.length);
+        resolve({
+          statusCode: res.statusCode,
+          headers: res.headers,
+          body: data
+        });
+      });
+    });
+
+    req.on('error', (error) => {
+      console.error('Image converter request error:', error);
+      reject(error);
+    });
+
+    req.on('timeout', () => {
+      console.error('Image converter request timeout after 5 minutes');
+      req.destroy();
+      reject(new Error('Request timeout after 5 minutes'));
+    });
+
+    if (options.body) {
+      console.log('Writing image converter body to request');
+      req.write(options.body);
+    }
+    
+    req.end();
+  });
 }

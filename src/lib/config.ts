@@ -2,7 +2,7 @@
 export const config = {
   // API endpoints
   api: {
-    // Use relative paths for Vercel deployment
+    // Vercel API routes
     webhookGenerate: '/api/webhook-generate',
     webhookRegenerate: '/api/webhook-regenerate',
     imageConverter: '/api/image-converter',
