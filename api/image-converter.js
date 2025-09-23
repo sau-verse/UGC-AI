@@ -1,5 +1,11 @@
 import https from 'https';
 
+export const config = {
+  api: {
+    bodyParser: false, // Disable body parsing to handle raw multipart data
+  },
+};
+
 export default async function handler(req, res) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -22,7 +28,25 @@ export default async function handler(req, res) {
   try {
     console.log('Image converter endpoint called');
     console.log('Content-Type:', req.headers['content-type']);
-    console.log('Body length:', req.body ? req.body.length : 0);
+    
+    // Get the raw body
+    const chunks = [];
+    req.on('data', chunk => chunks.push(chunk));
+    
+    await new Promise((resolve, reject) => {
+      req.on('end', resolve);
+      req.on('error', reject);
+    });
+    
+    const rawBody = Buffer.concat(chunks);
+    console.log('Raw body length:', rawBody.length);
+    
+    if (rawBody.length === 0) {
+      console.log('No body data received');
+      return res.status(400).json({ 
+        error: 'No file uploaded or upload error for field \'imageFile\'.' 
+      });
+    }
     
     // Forward the multipart form data to the reclad.site API
     const recladApiUrl = 'https://reclad.site/n8n_binary/n8n-to-url-converter.php';
@@ -33,7 +57,7 @@ export default async function handler(req, res) {
       headers: {
         'Content-Type': req.headers['content-type'] || 'multipart/form-data'
       },
-      body: req.body
+      body: rawBody
     });
 
     console.log('Reclad API response status:', response.statusCode);
@@ -109,7 +133,7 @@ function makeRequest(url, options) {
     });
 
     if (options.body) {
-      console.log('Writing image converter body to request');
+      console.log('Writing image converter body to request, length:', options.body.length);
       req.write(options.body);
     }
     
