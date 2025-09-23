@@ -42,7 +42,9 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080, // Changed to 8080 as requested
-    strictPort: false, // Changed to false to allow fallback to another port if 3000 is also busy
+    strictPort: false, // Changed to false to allow fallback to another port if 8080 is also busy
+    open: true, // Automatically open browser
+    cors: true, // Enable CORS for development
     proxy: {
       '/webhook-generate': {
         target: 'https://n8n.reclad.site',

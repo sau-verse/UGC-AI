@@ -14,7 +14,7 @@ export const config = {
   
   // App URLs
   appUrl: import.meta.env.PROD 
-    ? 'https://ugcgen-ai.vercel.app' 
+    ? 'https://ugcgen-ai-git-master-sau-verse.vercel.app' 
     : 'http://localhost:8080',
     
   // Supabase configuration
