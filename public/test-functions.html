@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Netlify Functions Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; border-radius: 5px; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        .result { margin-top: 10px; padding: 10px; background: #f5f5f5; border-radius: 3px; }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e8; color: #2e7d32; }
+    </style>
+</head>
+<body>
+    <h1>Netlify Functions Test</h1>
+    
+    <div class="test-section">
+        <h2>Test Webhook Generate</h2>
+        <button onclick="testWebhookGenerate()">Test /webhook-generate</button>
+        <div id="webhook-generate-result" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test Image Converter</h2>
+        <input type="file" id="imageInput" accept="image/*">
+        <button onclick="testImageConverter()" id="convertBtn" disabled>Test Image Converter</button>
+        <div id="image-converter-result" class="result"></div>
+    </div>
+
+    <script>
+        const imageInput = document.getElementById('imageInput');
+        const convertBtn = document.getElementById('convertBtn');
+        
+        imageInput.addEventListener('change', function() {
+            convertBtn.disabled = !this.files[0];
+        });
+
+        async function testWebhookGenerate() {
+            const resultDiv = document.getElementById('webhook-generate-result');
+            resultDiv.innerHTML = '<p>Testing webhook-generate...</p>';
+            
+            try {
+                const response = await fetch('/webhook-generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        test: true,
+                        id: 'test-id',
+                        prompt: 'test prompt',
+                        aspect_ratio: 'portrait',
+                        timestamp: new Date().toISOString(),
+                        action: 'generate_image'
+                    })
+                });
+                
+                const data = await response.text();
+                resultDiv.innerHTML = `
+                    <p><strong>Status:</strong> ${response.status}</p>
+                    <p><strong>Response:</strong> ${data}</p>
+                `;
+                resultDiv.className = response.ok ? 'result success' : 'result error';
+            } catch (error) {
+                resultDiv.innerHTML = `<p><strong>Error:</strong> ${error.message}</p>`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        async function testImageConverter() {
+            const resultDiv = document.getElementById('image-converter-result');
+            const file = imageInput.files[0];
+            
+            if (!file) return;
+            
+            resultDiv.innerHTML = '<p>Testing image converter...</p>';
+            
+            try {
+                const formData = new FormData();
+                formData.append('imageFile', file, 'test-image.png');
+                
+                const response = await fetch('/n8n_binary/n8n-to-url-converter.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                resultDiv.innerHTML = `
+                    <p><strong>Status:</strong> ${response.status}</p>
+                    <p><strong>Response:</strong> ${JSON.stringify(data, null, 2)}</p>
+                `;
+                resultDiv.className = response.ok ? 'result success' : 'result error';
+            } catch (error) {
+                resultDiv.innerHTML = `<p><strong>Error:</strong> ${error.message}</p>`;
+                resultDiv.className = 'result error';
+            }
+        }
+    </script>
+</body>
+</html>
