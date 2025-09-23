@@ -37,8 +37,8 @@ const App = () => {
 
   if (!appReady) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#0D0D0D] to-[#1A1A1A] flex items-center justify-center">
-        <div className="animate-spin h-8 w-8 border-2 border-purple-500 border-t-transparent rounded-full" />
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -52,8 +52,8 @@ const App = () => {
           <Sonner />
           <BrowserRouter>
             <Suspense fallback={
-              <div className="min-h-screen bg-gradient-to-br from-[#0D0D0D] to-[#1A1A1A] flex items-center justify-center">
-                <div className="animate-spin h-8 w-8 border-2 border-purple-500 border-t-transparent rounded-full" />
+              <div className="min-h-screen bg-background flex items-center justify-center">
+                <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
               </div>
             }>
               <Routes>

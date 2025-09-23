@@ -2,8 +2,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
-import { Plus, Image, Video, Zap, BarChart3, Clock, TrendingUp } from "lucide-react";
+import { Plus, Image, Video, Zap, BarChart3, Clock, TrendingUp, Settings } from "lucide-react";
 import Navigation from "@/components/Navigation";
+import DatabaseTest from "@/components/DatabaseTest";
 import { useAuth } from '@/hooks/supabase/useAuth';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
@@ -155,26 +156,34 @@ const Dashboard = () => {
       }
       
       console.log('Fetching projects for user:', user.id);
+      console.log('User email:', user.email);
+      console.log('User authenticated at:', user.created_at);
       setProjectsLoading(true);
       
       try {
-        // Fetch all image jobs for the user
+        // Fetch all image jobs for the user - try simpler query first
         const { data: imageJobs, error: imageJobsError } = await supabase
           .from('image_jobs')
-          .select('id, prompt, input_image, generated_image_url, status, updated_at')
+          .select('*')
           .eq('user_id', user.id)
           .order('updated_at', { ascending: false });
         
         console.log('Image jobs query result:', { data: imageJobs, error: imageJobsError });
+        console.log('Number of image jobs found:', imageJobs?.length || 0);
         
         if (imageJobsError) {
           console.error('Error fetching image jobs:', imageJobsError);
-          setProjectsLoading(false);
-          return;
+          console.error('Error details:', {
+            message: imageJobsError.message,
+            details: imageJobsError.details,
+            hint: imageJobsError.hint,
+            code: imageJobsError.code
+          });
+          // Don't return here, continue with empty image jobs
         }
         
         // Transform image jobs to project format
-        const imageProjects: Project[] = imageJobs.map(job => ({
+        const imageProjects: Project[] = (imageJobs || []).map(job => ({
           id: job.id,
           title: job.prompt ? job.prompt.substring(0, 30) + (job.prompt.length > 30 ? '...' : '') : 'Untitled Project',
           type: "UGC Image",
@@ -182,29 +191,68 @@ const Dashboard = () => {
           status: job.status === 'done' ? 'Completed' : job.status === 'processing' ? 'Processing' : job.status,
           prompt: job.prompt,
           input_image: job.input_image,
-          generated_image_url: job.generated_image_url,
+          generated_image_url: job.image_gen_url || job.generated_image_url, // Try both field names
           created_at: job.updated_at
         }));
         
         console.log('Transformed image projects:', imageProjects);
         
-        // Fetch all video jobs for the user
-        const { data: videoJobs, error: videoJobsError } = await supabase
-          .from('video_jobs')
-          .select('video_job_id, prompt, image_gen_url, generated_video_url, status, updated_at')
-          .eq('user_id', user.id)
-          .order('updated_at', { ascending: false });
+        // Fetch all video jobs for the user with image context
+        let videoJobs = [];
+        let videoJobsError = null;
         
-        console.log('Video jobs query result:', { data: videoJobs, error: videoJobsError });
+        try {
+          const { data, error } = await supabase
+            .from('video_jobs_with_context')
+            .select('video_job_id, prompt, image_gen_url, generated_video_url, status, updated_at')
+            .eq('user_id', user.id)
+            .order('updated_at', { ascending: false });
+          
+          videoJobs = data || [];
+          videoJobsError = error;
+          
+          console.log('Video jobs query result:', { data: videoJobs, error: videoJobsError });
+          console.log('Number of video jobs found:', videoJobs?.length || 0);
+        } catch (viewError) {
+          console.log('View query failed, trying direct join:', viewError);
+          
+          // Fallback: Use direct join if view doesn't work
+          const { data, error } = await supabase
+            .from('video_jobs')
+            .select(`
+              video_job_id, 
+              generated_video_url, 
+              status, 
+              updated_at,
+              image_jobs!inner(
+                prompt,
+                image_gen_url,
+                user_id
+              )
+            `)
+            .eq('image_jobs.user_id', user.id)
+            .order('updated_at', { ascending: false });
+          
+          videoJobs = data?.map(job => ({
+            video_job_id: job.video_job_id,
+            prompt: job.image_jobs.prompt,
+            image_gen_url: job.image_jobs.image_gen_url,
+            generated_video_url: job.generated_video_url,
+            status: job.status,
+            updated_at: job.updated_at
+          })) || [];
+          videoJobsError = error;
+          
+          console.log('Fallback video jobs query result:', { data: videoJobs, error: videoJobsError });
+        }
         
         if (videoJobsError) {
           console.error('Error fetching video jobs:', videoJobsError);
-          setProjectsLoading(false);
-          return;
+          // Don't return here, continue with empty video jobs
         }
         
         // Transform video jobs to project format
-        const videoProjects: Project[] = videoJobs.map(job => ({
+        const videoProjects: Project[] = (videoJobs || []).map(job => ({
           id: job.video_job_id,
           title: job.prompt ? job.prompt.substring(0, 30) + (job.prompt.length > 30 ? '...' : '') : 'Untitled Project',
           type: "UGC Video",
@@ -224,6 +272,8 @@ const Dashboard = () => {
         
         console.log('Combined and sorted projects:', allProjects);
         console.log('Total projects count:', allProjects.length);
+        console.log('Image projects count:', imageProjects.length);
+        console.log('Video projects count:', videoProjects.length);
         
         setRecentProjects(allProjects);
       } catch (error) {
@@ -293,7 +343,13 @@ const Dashboard = () => {
               </p>
             </div>
             
-            <div className="mt-6 lg:mt-0">
+            <div className="mt-6 lg:mt-0 flex gap-3">
+              <Link to="/settings">
+                <Button variant="outline" size="lg">
+                  <Settings className="mr-2 w-5 h-5" />
+                  Settings
+                </Button>
+              </Link>
               <Link to="/generate">
                 <Button size="lg" className="bg-gradient-primary hover:opacity-90 shadow-glow">
                   <Plus className="mr-2 w-5 h-5" />
@@ -301,6 +357,11 @@ const Dashboard = () => {
                 </Button>
               </Link>
             </div>
+          </div>
+
+          {/* Database Test - Temporary */}
+          <div className="mb-8">
+            <DatabaseTest />
           </div>
 
           {/* Stats Grid */}
@@ -333,15 +394,15 @@ const Dashboard = () => {
             ))}
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-8">
+          <div className="grid lg:grid-cols-1 gap-8">
             {/* All Projects Table */}
-            <div className="lg:col-span-2">
+            <div>
               <Card className="shadow-soft border-0">
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
-                    <span>All Projects</span>
+                    <span>Complete Work History</span>
                     <div className="flex items-center gap-2">
-                      <Badge variant="secondary">{recentProjects.length} projects</Badge>
+                      <Badge variant="secondary">{recentProjects.length} total projects</Badge>
                       <Button 
                         variant="outline" 
                         size="sm" 
@@ -363,11 +424,13 @@ const Dashboard = () => {
                       <table className="w-full">
                         <thead>
                           <tr className="border-b">
-                            <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Date</th>
+                            <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Created</th>
+                            <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Project Type</th>
                             <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Prompt</th>
                             <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Input Image</th>
-                            <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">AI Image</th>
-                            <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">AI Video</th>
+                            <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Generated Image</th>
+                            <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Generated Video</th>
+                            <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Status</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -376,6 +439,11 @@ const Dashboard = () => {
                               <tr key={project.id} className="border-b hover:bg-muted/50 dark:hover:bg-gray-800/50">
                                 <td className="py-3 px-2 text-sm text-muted-foreground">
                                   {project.date}
+                                </td>
+                                <td className="py-3 px-2">
+                                  <Badge variant={project.type === 'UGC Image' ? 'default' : 'secondary'}>
+                                    {project.type}
+                                  </Badge>
                                 </td>
                                 <td className="py-3 px-2">
                                   <div className="font-medium text-foreground max-w-xs truncate" title={project.prompt}>
@@ -396,45 +464,45 @@ const Dashboard = () => {
                                   )}
                                 </td>
                                 <td className="py-3 px-2">
-                                  {project.type === 'UGC Image' && project.generated_image_url ? (
+                                  {project.generated_image_url ? (
                                     <img 
                                       src={project.generated_image_url} 
-                                      alt="AI Generated" 
+                                      alt="Generated Image" 
                                       className="w-16 h-16 object-cover rounded border"
                                     />
-                                  ) : project.type === 'UGC Image' ? (
-                                    <div className="w-16 h-16 bg-muted rounded border flex items-center justify-center">
-                                      <span className="text-xs text-muted-foreground">Not generated</span>
-                                    </div>
                                   ) : (
                                     <div className="w-16 h-16 bg-muted rounded border flex items-center justify-center">
-                                      <span className="text-xs text-muted-foreground">N/A</span>
+                                      <span className="text-xs text-muted-foreground">Not generated</span>
                                     </div>
                                   )}
                                 </td>
                                 <td className="py-3 px-2">
-                                  {project.type === 'UGC Video' && project.generated_video_url ? (
+                                  {project.generated_video_url ? (
                                     <video 
                                       src={project.generated_video_url} 
                                       className="w-16 h-16 object-cover rounded border"
                                       muted
                                       loop
                                     />
-                                  ) : project.type === 'UGC Video' ? (
+                                  ) : (
                                     <div className="w-16 h-16 bg-muted rounded border flex items-center justify-center">
                                       <span className="text-xs text-muted-foreground">Not generated</span>
                                     </div>
-                                  ) : (
-                                    <div className="w-16 h-16 bg-muted rounded border flex items-center justify-center">
-                                      <span className="text-xs text-muted-foreground">N/A</span>
-                                    </div>
                                   )}
+                                </td>
+                                <td className="py-3 px-2">
+                                  <Badge 
+                                    variant={project.status === 'Completed' ? 'default' : project.status === 'Processing' ? 'secondary' : 'destructive'}
+                                    className={project.status === 'Completed' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : ''}
+                                  >
+                                    {project.status}
+                                  </Badge>
                                 </td>
                               </tr>
                             ))
                           ) : (
                             <tr>
-                              <td colSpan={5} className="py-8 text-center text-muted-foreground">
+                              <td colSpan={7} className="py-8 text-center text-muted-foreground">
                                 <div className="flex flex-col items-center justify-center gap-4">
                                   <div className="bg-muted p-4 rounded-full">
                                     <Image className="w-8 h-8 text-muted-foreground" />
@@ -458,66 +526,6 @@ const Dashboard = () => {
               </Card>
             </div>
 
-            {/* Quick Actions */}
-            <div>
-              <Card className="dark:shadow-none border-0">
-                <CardHeader>
-                  <CardTitle>Quick Actions</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Link to="/generate">
-                    <Button variant="outline" className="w-full justify-start">
-                      <Plus className="mr-2 w-4 h-4" />
-                      New UGC Video
-                    </Button>
-                  </Link>
-                  
-                  <Link to="/projects">
-                    <Button variant="outline" className="w-full justify-start">
-                      <Image className="mr-2 w-4 h-4" />
-                      Browse Projects
-                    </Button>
-                  </Link>
-                  
-                  <Link to="/settings">
-                    <Button variant="outline" className="w-full justify-start">
-                      <BarChart3 className="mr-2 w-4 h-4" />
-                      View Analytics
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-
-              {/* Usage Overview */}
-              <Card className="dark:shadow-none border-0 mt-6">
-                <CardHeader>
-                  <CardTitle>This Month's Usage</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div>
-                      <div className="flex justify-between text-sm mb-2">
-                        <span>AI Images</span>
-                        <span className="text-muted-foreground">47/100</span>
-                      </div>
-                      <div className="w-full bg-muted rounded-full h-2">
-                        <div className="bg-gradient-primary h-2 rounded-full transition-smooth" style={{width: '47%'}}></div>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <div className="flex justify-between text-sm mb-2">
-                        <span>UGC Videos</span>
-                        <span className="text-muted-foreground">23/50</span>
-                      </div>
-                      <div className="w-full bg-muted rounded-full h-2">
-                        <div className="bg-gradient-primary h-2 rounded-full transition-smooth" style={{width: '46%'}}></div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
           </div>
         </div>
       </main>

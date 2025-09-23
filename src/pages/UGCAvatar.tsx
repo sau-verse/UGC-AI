@@ -374,11 +374,11 @@ const UGCAvatar = () => {
 
   // ---------- UI ----------
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0D0D0D] to-[#1A1A1A]">
+    <div className="min-h-screen bg-background">
       <Navigation />
       <main className="pt-24 p-6">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-5xl font-bold text-white mb-6 text-center">UGC Avatar</h1>
+          <h1 className="text-5xl font-bold text-foreground mb-6 text-center">UGC Avatar</h1>
           <div className="grid lg:grid-cols-2 gap-8">
             {/* Controls */}
             <div className="space-y-6">

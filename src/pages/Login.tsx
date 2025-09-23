@@ -472,10 +472,10 @@ const Login = () => {
   // Show OAuth loading state
   if (oauthLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#0D0D0D] to-[#1A1A1A] flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin h-12 w-12 border-2 border-purple-500 border-t-transparent rounded-full mx-auto"></div>
-          <p className="mt-4 text-white">Redirecting to Google for authentication...</p>
+          <div className="animate-spin h-12 w-12 border-2 border-primary border-t-transparent rounded-full mx-auto"></div>
+          <p className="mt-4 text-foreground">Redirecting to Google for authentication...</p>
         </div>
       </div>
     );
@@ -484,8 +484,8 @@ const Login = () => {
   // Show loading state while checking auth
   if (authLoading || checkingEmail) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#0D0D0D] to-[#1A1A1A] flex items-center justify-center">
-        <div className="animate-spin h-8 w-8 border-2 border-purple-500 border-t-transparent rounded-full" />
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -499,12 +499,12 @@ const Login = () => {
 
   // Show login/signup form if user is not authenticated
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0D0D0D] to-[#1A1A1A] flex items-center justify-center">
+    <div className="min-h-screen bg-background flex items-center justify-center">
       <Navigation />
       <div className="w-full max-w-md p-6">
-        <Card className="bg-[#222]/80 backdrop-blur-sm border-gray-700/50 shadow-2xl rounded-2xl">
+        <Card className="bg-card border-border shadow-large rounded-2xl">
           <CardHeader>
-            <CardTitle className="text-white text-2xl font-bold text-center">
+            <CardTitle className="text-card-foreground text-2xl font-bold text-center">
               {isLoginMode ? 'Login to Content Generator' : 'Sign Up for Content Generator'}
             </CardTitle>
           </CardHeader>
@@ -519,7 +519,7 @@ const Login = () => {
                         placeholder="First Name"
                         value={firstName}
                         onChange={(e) => setFirstName(e.target.value)}
-                        className="bg-[#1A1A1A]/50 border-gray-600 text-white placeholder-gray-400 focus:border-purple-500 rounded-xl"
+                        className="bg-input border-border text-foreground placeholder-muted-foreground focus:border-primary rounded-xl"
                         required={!isLoginMode}
                       />
                     </div>
@@ -529,7 +529,7 @@ const Login = () => {
                         placeholder="Last Name"
                         value={lastName}
                         onChange={(e) => setLastName(e.target.value)}
-                        className="bg-[#1A1A1A]/50 border-gray-600 text-white placeholder-gray-400 focus:border-purple-500 rounded-xl"
+                        className="bg-input border-border text-foreground placeholder-muted-foreground focus:border-primary rounded-xl"
                         required={!isLoginMode}
                       />
                     </div>
@@ -542,7 +542,7 @@ const Login = () => {
                   placeholder="Email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="bg-[#1A1A1A]/50 border-gray-600 text-white placeholder-gray-400 focus:border-purple-500 rounded-xl"
+                  className="bg-input border-border text-foreground placeholder-muted-foreground focus:border-primary rounded-xl"
                   required
                 />
               </div>
@@ -552,12 +552,12 @@ const Login = () => {
                   placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="bg-[#1A1A1A]/50 border-gray-600 text-white placeholder-gray-400 focus:border-purple-500 rounded-xl"
+                  className="bg-input border-border text-foreground placeholder-muted-foreground focus:border-primary rounded-xl"
                   required
                 />
               </div>
               {authError && (
-                <div className="text-red-400 text-sm flex items-start">
+                <div className="text-destructive text-sm flex items-start">
                   <AlertCircle className="h-4 w-4 mr-1 mt-0.5 flex-shrink-0" />
                   <span>{authError}</span>
                 </div>
@@ -565,11 +565,11 @@ const Login = () => {
               <Button
                 type="submit"
                 disabled={authLoading}
-                className="w-full h-12 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg disabled:opacity-50"
+                className="w-full h-12 bg-gradient-primary hover:opacity-90 text-primary-foreground font-semibold rounded-xl transition-all duration-300 shadow-lg disabled:opacity-50"
               >
                 {authLoading ? (
                   <div className="flex items-center gap-2">
-                    <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+                    <div className="animate-spin h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full" />
                     {isLoginMode ? 'Logging in...' : 'Signing up...'}
                   </div>
                 ) : (
@@ -584,10 +584,10 @@ const Login = () => {
             {/* Divider */}
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-600"></div>
+                <div className="w-full border-t border-border"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-[#222] text-gray-400">Or continue with</span>
+                <span className="px-2 bg-card text-muted-foreground">Or continue with</span>
               </div>
             </div>
             
@@ -596,11 +596,11 @@ const Login = () => {
               onClick={handleSignInWithGoogle}
               disabled={authLoading || oauthLoading}
               variant="outline"
-              className="w-full h-12 border-gray-600 text-gray-300 hover:bg-[#333] hover:text-white hover:border-purple-400 rounded-xl transition-all duration-300 shadow-lg disabled:opacity-50"
+              className="w-full h-12 border-border text-foreground hover:bg-accent hover:text-accent-foreground hover:border-primary rounded-xl transition-all duration-300 shadow-lg disabled:opacity-50"
             >
               {authLoading || oauthLoading ? (
                 <div className="flex items-center gap-2">
-                  <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+                  <div className="animate-spin h-4 w-4 border-2 border-foreground border-t-transparent rounded-full" />
                   Signing in with Google...
                 </div>
               ) : (
@@ -633,7 +633,7 @@ const Login = () => {
                 onClick={() => {
                   setIsLoginMode(!isLoginMode);
                 }}
-                className="text-purple-400 hover:text-purple-300 text-sm"
+                className="text-primary hover:text-primary/80 text-sm transition-colors"
               >
                 {isLoginMode 
                   ? "Don't have an account? Sign Up" 
