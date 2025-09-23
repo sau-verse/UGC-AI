@@ -53,6 +53,7 @@ exports.handler = async (event, context) => {
 
     console.log('n8n response status:', response.statusCode);
     console.log('n8n response headers:', response.headers);
+    console.log('n8n response body length:', response.body ? response.body.length : 0);
 
     // Return the response from n8n
     return {

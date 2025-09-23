@@ -30,6 +30,11 @@
   to = "/.netlify/functions/image-converter"
   status = 200
 
+[[redirects]]
+  from = "/test-webhook"
+  to = "/.netlify/functions/test-webhook"
+  status = 200
+
 # Handle SPA routing
 [[redirects]]
   from = "/*"
