@@ -284,13 +284,18 @@ const Generator = () => {
       if (imageUrl) payload.image_url = imageUrl; else payload.image_data_url = uploadedProduct;
 
       console.log('Sending payload to webhook:', payload);
-      const response = await fetch('/webhook-generate', {
+      
+      // Fire-and-forget webhook call - don't wait for response since we use realtime
+      fetch('/webhook-generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'image/*,application/octet-stream,application/json' },
         body: JSON.stringify(payload),
+      }).catch(error => {
+        console.error('Webhook call failed:', error);
+        // Don't throw error here - let realtime handle the status updates
       })
-      if (!response.ok) throw new Error(`HTTP ${response.status}`)
-      toast({ title: "Success! UGC AI Image is created." })
+      
+      toast({ title: "Image generation started! You'll be notified when it's ready." })
     } catch (err) {
       toast({ title: "Error", description: "Failed to generate photo.", variant: "destructive" })
       setGeneratedPhoto(null)
@@ -415,19 +420,20 @@ const Generator = () => {
 
       console.log('Sending regeneration payload to webhook:', payload);
 
-      // Call the regeneration webhook through proxy to avoid CORS issues
-      const response = await fetch('/webhook-regenerate', {
+      // Fire-and-forget webhook call - don't wait for response since we use realtime
+      fetch('/webhook-regenerate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'image/*,application/octet-stream,application/json',
         },
         body: JSON.stringify(payload),
+      }).catch(error => {
+        console.error('Regeneration webhook call failed:', error);
+        // Don't throw error here - let realtime handle the status updates
       })
-
-      if (!response.ok) throw new Error(`HTTP ${response.status}`)
       
-      toast({ title: "Success! UGC AI Image is created." })
+      toast({ title: "Image regeneration started! You'll be notified when it's ready." })
     } catch (err) {
       toast({ title: "Error", description: "Failed to regenerate photo.", variant: "destructive" })
       setGeneratedPhoto(null)

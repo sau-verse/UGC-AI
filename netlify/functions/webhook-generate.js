@@ -43,27 +43,34 @@ exports.handler = async (event, context) => {
     const n8nWebhookUrl = 'https://n8n.reclad.site/webhook/c82b79e7-a7f4-4527-a0a5-f126d29a93cb';
     console.log('Forwarding to n8n webhook:', n8nWebhookUrl);
     
-    const response = await makeRequest(n8nWebhookUrl, {
+    // Fire-and-forget request to n8n - don't wait for response
+    makeRequest(n8nWebhookUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'image/*,application/octet-stream,application/json'
       },
       body: JSON.stringify(payload)
+    }).then(response => {
+      console.log('n8n response status:', response.statusCode);
+      console.log('n8n response headers:', response.headers);
+      console.log('n8n response body length:', response.body ? response.body.length : 0);
+    }).catch(error => {
+      console.error('n8n request failed:', error);
     });
 
-    console.log('n8n response status:', response.statusCode);
-    console.log('n8n response headers:', response.headers);
-    console.log('n8n response body length:', response.body ? response.body.length : 0);
-
-    // Return the response from n8n
+    // Return immediately - let realtime handle status updates
     return {
-      statusCode: response.statusCode,
+      statusCode: 200,
       headers: {
         'Access-Control-Allow-Origin': '*',
-        'Content-Type': response.headers['content-type'] || 'application/json'
+        'Content-Type': 'application/json'
       },
-      body: response.body
+      body: JSON.stringify({ 
+        success: true, 
+        message: 'Image generation started',
+        jobId: payload.id
+      })
     };
 
   } catch (error) {

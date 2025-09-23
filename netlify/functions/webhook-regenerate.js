@@ -36,23 +36,34 @@ exports.handler = async (event, context) => {
     // Forward the request to the n8n webhook
     const n8nWebhookUrl = 'https://n8n.reclad.site/webhook/6c5a5941-63b0-463e-8a16-0c7e08882c72';
     
-    const response = await makeRequest(n8nWebhookUrl, {
+    // Fire-and-forget request to n8n - don't wait for response
+    makeRequest(n8nWebhookUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'image/*,application/octet-stream,application/json'
       },
       body: JSON.stringify(payload)
+    }).then(response => {
+      console.log('n8n regenerate response status:', response.statusCode);
+      console.log('n8n regenerate response headers:', response.headers);
+      console.log('n8n regenerate response body length:', response.body ? response.body.length : 0);
+    }).catch(error => {
+      console.error('n8n regenerate request failed:', error);
     });
 
-    // Return the response from n8n
+    // Return immediately - let realtime handle status updates
     return {
-      statusCode: response.statusCode,
+      statusCode: 200,
       headers: {
         'Access-Control-Allow-Origin': '*',
-        'Content-Type': response.headers['content-type'] || 'application/json'
+        'Content-Type': 'application/json'
       },
-      body: response.body
+      body: JSON.stringify({ 
+        success: true, 
+        message: 'Image regeneration started',
+        jobId: payload.id
+      })
     };
 
   } catch (error) {
