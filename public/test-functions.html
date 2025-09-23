@@ -79,7 +79,7 @@
                 const formData = new FormData();
                 formData.append('imageFile', file, 'test-image.png');
                 
-                const response = await fetch('/n8n_binary/n8n-to-url-converter.php', {
+                const response = await fetch('/api/image-converter', {
                     method: 'POST',
                     body: formData
                 });

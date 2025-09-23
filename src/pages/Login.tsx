@@ -328,8 +328,8 @@ const Login = () => {
         console.log('FormData prepared with imageFile field');
         
         // Send to the converter endpoint through proxy
-        console.log('Sending request to /n8n_binary/n8n-to-url-converter.php');
-        const converterResponse = await fetch('/n8n_binary/n8n-to-url-converter.php', {
+        console.log('Sending request to /api/image-converter');
+        const converterResponse = await fetch('/api/image-converter', {
           method: 'POST',
           body: formData
         });

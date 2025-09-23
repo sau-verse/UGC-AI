@@ -3,6 +3,11 @@
   "outputDirectory": "dist",
   "installCommand": "npm install",
   "framework": "vite",
+  "functions": {
+    "api/image-converter.js": {
+      "maxDuration": 300
+    }
+  },
   "rewrites": [
     {
       "source": "/((?!api/).*)",

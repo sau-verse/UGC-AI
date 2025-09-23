@@ -22,7 +22,7 @@ export default async function handler(req, res) {
   try {
     console.log('Image converter endpoint called');
     console.log('Content-Type:', req.headers['content-type']);
-    console.log('Body length:', req.body ? JSON.stringify(req.body).length : 0);
+    console.log('Body length:', req.body ? req.body.length : 0);
     
     // Forward the multipart form data to the reclad.site API
     const recladApiUrl = 'https://reclad.site/n8n_binary/n8n-to-url-converter.php';
@@ -40,10 +40,18 @@ export default async function handler(req, res) {
     console.log('Reclad API response headers:', response.headers);
     console.log('Reclad API response body length:', response.body ? response.body.length : 0);
 
+    // Parse the response body if it's JSON
+    let responseData;
+    try {
+      responseData = JSON.parse(response.body);
+    } catch (parseError) {
+      responseData = response.body;
+    }
+
     // Return the response from the reclad.site API
     return res.status(response.statusCode).json({
       success: true,
-      data: response.body,
+      data: responseData,
       statusCode: response.statusCode
     });
 
