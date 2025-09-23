@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Image Converter Test</title>
+</head>
+<body>
+    <h1>Image Converter Test</h1>
+    <input type="file" id="imageInput" accept="image/*">
+    <button id="convertButton" disabled>Convert to URL</button>
+    <div id="result"></div>
+
+    <script>
+        const imageInput = document.getElementById('imageInput');
+        const convertButton = document.getElementById('convertButton');
+        const resultDiv = document.getElementById('result');
+
+        imageInput.addEventListener('change', function() {
+            convertButton.disabled = !this.files[0];
+        });
+
+        convertButton.addEventListener('click', async function() {
+            if (!imageInput.files[0]) return;
+
+            const file = imageInput.files[0];
+            const formData = new FormData();
+            formData.append('imageFile', file, 'test-image.png');
+
+            try {
+                resultDiv.innerHTML = '<p>Sending request...</p>';
+                const response = await fetch('/n8n_binary/n8n-to-url-converter.php', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                resultDiv.innerHTML = `<p>Status: ${response.status}</p>`;
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.innerHTML += `<p>Response: ${JSON.stringify(data, null, 2)}</p>`;
+                    console.log('Full response:', data);
+                } else {
+                    const errorText = await response.text();
+                    resultDiv.innerHTML += `<p>Error: ${errorText}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p>Error: ${error.message}</p>`;
+                console.error('Error:', error);
+            }
+        });
+    </script>
+</body>
+</html>
