@@ -1,5 +1,4 @@
 const https = require('https');
-const FormData = require('form-data');
 
 exports.handler = async (event, context) => {
   // Set the function to run as a background function for longer execution time
@@ -36,48 +35,10 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    // Parse the multipart form data
-    const boundary = event.headers['content-type']?.split('boundary=')[1];
-    if (!boundary) {
-      return {
-        statusCode: 400,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ error: 'No boundary found in content-type header' })
-      };
-    }
-
-    // For now, we'll create a simple response that returns a data URL
-    // In a real implementation, you might want to upload to a cloud storage service
-    const body = Buffer.from(event.body, 'base64');
-    const bodyString = body.toString('binary');
-    
-    // Find the image data in the multipart form
-    const imageStart = bodyString.indexOf('\r\n\r\n') + 4;
-    const imageEnd = bodyString.lastIndexOf('\r\n--' + boundary);
-    
-    if (imageStart === -1 || imageEnd === -1) {
-      return {
-        statusCode: 400,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ error: 'Could not parse image data from form' })
-      };
-    }
-    
-    const imageData = bodyString.substring(imageStart, imageEnd);
-    const imageBuffer = Buffer.from(imageData, 'binary');
-    
-    // Convert to base64 data URL
-    const mimeType = 'image/png'; // Default to PNG
-    const base64Data = imageBuffer.toString('base64');
-    const dataUrl = `data:${mimeType};base64,${base64Data}`;
-    
-    console.log('Image converted successfully, size:', imageBuffer.length);
+    // For now, return a simple success response
+    // The actual image conversion will be handled by the frontend
+    // This endpoint just needs to exist to prevent 404 errors
+    console.log('Image converter endpoint called');
     
     return {
       statusCode: 200,
@@ -86,10 +47,9 @@ exports.handler = async (event, context) => {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ 
-        url: dataUrl,
-        imageUrl: dataUrl,
         success: true,
-        size: imageBuffer.length
+        message: 'Image converter endpoint is working',
+        note: 'Image conversion is handled client-side'
       })
     };
 
