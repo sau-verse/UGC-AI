@@ -277,11 +277,12 @@ const Generator = () => {
         id: created.jobId,
         prompt: prompt.trim(),
         aspect_ratio: selectedFormat,
-        timestamp: new Date().toISOString(),
+        input_image_url: imageUrl,
+        status: "queued",
         action: "generate_image",
+        timestamp: new Date().toISOString(),
         ...(userId && { user_id: userId })
       }
-      if (imageUrl) payload.image_url = imageUrl; else payload.image_data_url = uploadedProduct;
 
       console.log('Sending payload to webhook:', payload);
       const response = await fetch('/webhook-generate', {
