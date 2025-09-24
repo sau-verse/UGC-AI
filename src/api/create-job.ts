@@ -33,12 +33,19 @@ export async function createJob(jobData: CreateJobRequest): Promise<CreateJobRes
     
     console.log('User authenticated:', user.id, user.email);
     
+    // Validate aspect_ratio
+    const validAspectRatios = ['portrait', 'landscape'];
+    if (!jobData.aspect_ratio || !validAspectRatios.includes(jobData.aspect_ratio)) {
+      console.error('Invalid aspect_ratio:', jobData.aspect_ratio);
+      return { error: `Invalid aspect_ratio. Must be one of: ${validAspectRatios.join(', ')}` };
+    }
+
     // Prepare job data for insertion
     const jobInsertData = {
       user_id: user.id,
-      prompt: jobData.prompt,
+      prompt: jobData.prompt?.trim() || '',
       aspect_ratio: jobData.aspect_ratio,
-      input_image: jobData.input_image, // Match the database schema field name
+      input_image: jobData.input_image || null, // Match the database schema field name
       status: 'queued'
     };
     
@@ -54,8 +61,14 @@ export async function createJob(jobData: CreateJobRequest): Promise<CreateJobRes
     console.log('Insert result:', { data, error });
     
     if (error) {
-      console.error('Error creating job:', error)
-      return { error: `Failed to create job: ${error.message}` }
+      console.error('Error creating job:', error);
+      console.error('Error details:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      });
+      return { error: `Failed to create job: ${error.message}${error.details ? ` (${error.details})` : ''}` }
     }
     
     console.log('Job created successfully with ID:', data.id);
