@@ -290,9 +290,16 @@ const Generator = () => {
         headers: { 'Content-Type': 'application/json', 'Accept': 'image/*,application/octet-stream,application/json' },
         body: JSON.stringify(payload),
       })
-      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Webhook error response:', errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+      
       toast({ title: "Success! UGC AI Image is created." })
     } catch (err) {
+      console.error('Webhook error:', err);
       toast({ title: "Error", description: "Failed to generate photo.", variant: "destructive" })
       setGeneratedPhoto(null)
     } finally {
