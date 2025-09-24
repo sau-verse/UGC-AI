@@ -12,8 +12,22 @@ const httpsAgent = new Agent({
 });
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
-  build: {
+export default defineConfig(({ mode }) => {
+  // Environment-specific configuration
+  const isProduction = mode === 'production';
+  const isPreview = process.env.VERCEL_ENV === 'preview';
+  const isDevelopment = mode === 'development';
+  
+  console.log('Vite config - Mode:', mode, 'Vercel ENV:', process.env.VERCEL_ENV);
+  
+  return {
+    // Define environment variables for the build
+    define: {
+      __VERCEL_ENV__: JSON.stringify(process.env.VERCEL_ENV || 'development'),
+      __VERCEL_URL__: JSON.stringify(process.env.VERCEL_URL || 'localhost:8080'),
+    },
+    
+    build: {
     // Optimize bundle size
     rollupOptions: {
       output: {
@@ -206,4 +220,5 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-}));
+  };
+});

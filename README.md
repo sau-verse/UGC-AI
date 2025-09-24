@@ -104,9 +104,49 @@ The project includes Vercel API routes in the `/api` directory:
 
 #### Deployment Steps
 
-1. Connect your GitHub repository to Vercel
-2. Set the environment variables in Vercel dashboard
-3. Deploy automatically on every push to main branch
+1. **Connect your GitHub repository to Vercel**
+   - Go to [Vercel Dashboard](https://vercel.com/dashboard)
+   - Click "New Project" and import your GitHub repository
+   - Select the repository: `sau-verse/UGC-AI`
+
+2. **Configure Environment Variables in Vercel**
+   - Go to Project Settings → Environment Variables
+   - Add the following variables:
+     ```
+     VITE_SUPABASE_URL=your_supabase_url
+     VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+     ```
+
+3. **Deploy Configuration**
+   - **Development**: `http://localhost:8080` (local development)
+   - **Preview**: `https://ugcgen-ai-git-master-sau-verse.vercel.app` (Git branches)
+   - **Production**: `https://ugcgen-ai.vercel.app` (main branch)
+
+4. **Automatic Deployment**
+   - Push to `main` branch → Production deployment
+   - Push to other branches → Preview deployment
+   - Pull requests → Preview deployment
+
+#### Environment-Specific Configuration
+
+The app automatically detects the environment and configures accordingly:
+
+- **Development**: Uses local Vite proxy for API calls
+- **Preview**: Uses Vercel preview domain with API routes
+- **Production**: Uses production domain with optimized API routes
+
+#### Manual Deployment Commands
+
+```bash
+# Build for Vercel deployment
+npm run build:vercel
+
+# Deploy to Vercel (if using Vercel CLI)
+vercel --prod
+
+# Check deployment configuration
+npm run deploy:config
+```
 
 ## Learn More
 

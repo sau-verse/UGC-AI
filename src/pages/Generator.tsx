@@ -239,7 +239,8 @@ const Generator = () => {
           console.log('Sending request to /n8n_binary/n8n-to-url-converter.php');
           const converterResponse = await fetch('/n8n_binary/n8n-to-url-converter.php', {
             method: 'POST',
-            body: formData
+            body: formData,
+            // Don't set Content-Type header - let the browser set it with boundary for multipart/form-data
           });
           
           console.log('Converter response status:', converterResponse.status);
@@ -283,10 +284,17 @@ const Generator = () => {
       }
 
       // Create DB row first to get a stable imageJobId
+      // Limit input_image size to avoid database issues with very long data URLs
+      let inputImageForDB = imageUrl;
+      if (!inputImageForDB && uploadedProduct) {
+        // If data URL is too long (> 1000 chars), don't store it in DB
+        inputImageForDB = uploadedProduct.length > 1000 ? undefined : uploadedProduct;
+      }
+      
       const created = await createJob({
         prompt: prompt.trim(),
         aspect_ratio: selectedFormat as 'portrait' | 'landscape',
-        input_image: imageUrl || uploadedProduct || undefined
+        input_image: inputImageForDB
       })
       if (created.error || !created.jobId) throw new Error(created.error || 'Failed to create image job')
       setImageJobId(created.jobId)
@@ -401,7 +409,8 @@ const Generator = () => {
           console.log('Sending request to /n8n_binary/n8n-to-url-converter.php');
           const converterResponse = await fetch('/n8n_binary/n8n-to-url-converter.php', {
             method: 'POST',
-            body: formData
+            body: formData,
+            // Don't set Content-Type header - let the browser set it with boundary for multipart/form-data
           });
           
           console.log('Converter response status:', converterResponse.status);
@@ -445,10 +454,17 @@ const Generator = () => {
       }
 
       // Create a new DB row for regeneration (like generate flow)
+      // Limit input_image size to avoid database issues with very long data URLs
+      let inputImageForDB = imageUrl;
+      if (!inputImageForDB && uploadedProduct) {
+        // If data URL is too long (> 1000 chars), don't store it in DB
+        inputImageForDB = uploadedProduct.length > 1000 ? undefined : uploadedProduct;
+      }
+      
       const created = await createJob({
         prompt: prompt.trim(),
         aspect_ratio: selectedFormat as 'portrait' | 'landscape',
-        input_image: imageUrl || uploadedProduct || undefined
+        input_image: inputImageForDB
       })
       if (created.error || !created.jobId) throw new Error(created.error || 'Failed to create image job for regeneration')
       setImageJobId(created.jobId)

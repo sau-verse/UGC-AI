@@ -1,3 +1,5 @@
+import vercelConfig from './vercel-config';
+
 // Configuration for different environments
 export const config = {
   // API endpoints
@@ -11,11 +13,21 @@ export const config = {
   // Environment detection
   isDevelopment: import.meta.env.DEV,
   isProduction: import.meta.env.PROD,
+  isVercelPreview: import.meta.env.VITE_VERCEL_ENV === 'preview',
+  isVercelProduction: import.meta.env.VITE_VERCEL_ENV === 'production',
   
-  // App URLs
-  appUrl: import.meta.env.PROD 
-    ? 'https://ugcgen-ai-git-master-sau-verse.vercel.app' 
-    : 'http://localhost:8080',
+  // App URLs - use Vercel config for dynamic domain detection
+  appUrl: vercelConfig.getDomain(),
+    
+  // Domain-specific configuration
+  domains: {
+    development: 'http://localhost:8080',
+    preview: 'https://ugcgen-ai-git-master-sau-verse.vercel.app',
+    production: 'https://ugcgen-ai.vercel.app'
+  },
+  
+  // Vercel-specific configuration
+  vercel: vercelConfig,
     
   // Supabase configuration
   supabase: {

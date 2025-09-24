@@ -14,7 +14,9 @@
     "preview:host": "vite preview --host",
     "type-check": "tsc --noEmit",
     "clean": "rm -rf dist",
-    "setup": "npm install && node scripts/dev-setup.js"
+    "setup": "npm install && node scripts/dev-setup.js",
+    "deploy:config": "node scripts/deploy.js",
+    "build:vercel": "npm run build && npm run deploy:config"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
