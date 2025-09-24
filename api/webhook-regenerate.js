@@ -73,21 +73,28 @@ export default async function handler(req, res) {
       }
     };
     
-    // Execute webhook call as fire-and-forget (realtime handles status updates)
+    // Execute webhook call and track status
+    let webhookStatus = 'pending';
+    let webhookError = null;
+    
     makeWebhookCall()
       .then(result => {
         console.log('✅ Final regenerate webhook result:', result);
+        webhookStatus = 'success';
       })
       .catch(error => {
         console.error('❌ All regenerate webhook attempts failed:', error);
-        // Don't throw error here - realtime will handle status updates
+        webhookStatus = 'failed';
+        webhookError = error.message;
       });
 
-    // Return immediately - let realtime handle status updates
+    // Return immediately with webhook status - let realtime handle status updates
     return res.status(200).json({ 
       success: true, 
       message: 'Image regeneration started',
-      jobId: payload.id
+      jobId: payload.id,
+      webhookStatus: webhookStatus,
+      webhookError: webhookError
     });
 
   } catch (error) {
