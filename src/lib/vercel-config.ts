@@ -1,44 +1,34 @@
-// Vercel-specific configuration
+// Vercel configuration for bypass token
 export const vercelConfig = {
-  // Environment detection
-  getEnvironment: () => {
-    if (import.meta.env.DEV) return 'development';
-    if (import.meta.env.VITE_VERCEL_ENV === 'preview') return 'preview';
-    if (import.meta.env.VITE_VERCEL_ENV === 'production') return 'production';
-    return 'production'; // default fallback
-  },
+  // Your Vercel deployment URL
+  baseUrl: 'https://ugcgen-ai-git-master-sau-verse.vercel.app',
   
-  // Get the correct domain based on environment
-  getDomain: () => {
-    const env = vercelConfig.getEnvironment();
-    const domains = {
-      development: 'http://localhost:8080',
-      preview: 'https://ugcgen-ai-git-master-sau-verse.vercel.app',
-      production: 'https://ugcgen-ai.vercel.app'
-    };
-    return domains[env as keyof typeof domains];
-  },
+  // Bypass token (get this from Vercel dashboard → Settings → Security)
+  // Replace 'YOUR_BYPASS_TOKEN' with the actual token from your dashboard
+  bypassToken: process.env.VERCEL_BYPASS_TOKEN || 'YOUR_BYPASS_TOKEN',
   
-  // Get API base URL
-  getApiBaseUrl: () => {
-    return vercelConfig.getDomain();
-  },
-  
-  // Check if running on Vercel
-  isVercel: () => {
-    return import.meta.env.PROD && (import.meta.env.VITE_VERCEL_ENV || import.meta.env.VITE_VERCEL_URL);
-  },
-  
-  // Get current deployment info
-  getDeploymentInfo: () => {
-    return {
-      environment: vercelConfig.getEnvironment(),
-      domain: vercelConfig.getDomain(),
-      isVercel: vercelConfig.isVercel(),
-      vercelUrl: import.meta.env.VITE_VERCEL_URL,
-      vercelEnv: import.meta.env.VITE_VERCEL_ENV
-    };
+  // API endpoints with bypass token
+  api: {
+    webhookGenerate: (token?: string) => 
+      `${vercelConfig.baseUrl}/api/webhook-generate${token ? `?x-vercel-protection-bypass=${token}` : ''}`,
+    webhookRegenerate: (token?: string) => 
+      `${vercelConfig.baseUrl}/api/webhook-regenerate${token ? `?x-vercel-protection-bypass=${token}` : ''}`,
+    imageConverter: (token?: string) => 
+      `${vercelConfig.baseUrl}/api/image-converter${token ? `?x-vercel-protection-bypass=${token}` : ''}`,
   }
 };
 
-export default vercelConfig;
+// Helper function to make authenticated API calls
+export const makeVercelAPICall = async (endpoint: string, options: RequestInit = {}) => {
+  const url = endpoint.includes('?') 
+    ? `${endpoint}&x-vercel-protection-bypass=${vercelConfig.bypassToken}`
+    : `${endpoint}?x-vercel-protection-bypass=${vercelConfig.bypassToken}`;
+    
+  return fetch(url, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+};

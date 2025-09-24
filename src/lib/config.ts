@@ -1,5 +1,3 @@
-import vercelConfig from './vercel-config';
-
 // Configuration for different environments
 export const config = {
   // API endpoints
@@ -13,21 +11,11 @@ export const config = {
   // Environment detection
   isDevelopment: import.meta.env.DEV,
   isProduction: import.meta.env.PROD,
-  isVercelPreview: import.meta.env.VITE_VERCEL_ENV === 'preview',
-  isVercelProduction: import.meta.env.VITE_VERCEL_ENV === 'production',
   
-  // App URLs - use Vercel config for dynamic domain detection
-  appUrl: vercelConfig.getDomain(),
-    
-  // Domain-specific configuration
-  domains: {
-    development: 'http://localhost:8080',
-    preview: 'https://ugcgen-ai-git-master-sau-verse.vercel.app',
-    production: 'https://ugcgen-ai.vercel.app'
-  },
-  
-  // Vercel-specific configuration
-  vercel: vercelConfig,
+  // App URLs
+  appUrl: import.meta.env.PROD 
+    ? 'https://ugcgen-ai-git-master-sau-verse.vercel.app' 
+    : 'http://localhost:8080',
     
   // Supabase configuration
   supabase: {
@@ -39,6 +27,14 @@ export const config = {
   external: {
     n8nBaseUrl: 'https://n8n.reclad.site',
     imageConverterUrl: 'https://reclad.site/n8n_binary',
+  },
+  
+  // Webhook method configuration
+  webhook: {
+    // Use Vercel proxy method (tested and working)
+    method: 'vercel-proxy',
+    // Direct n8n method is not working due to workflow errors
+    directN8nEnabled: false,
   }
 };
 
