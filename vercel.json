@@ -1,0 +1,11 @@
+{
+  "rewrites": [
+    { "source": "/webhook-generate", "destination": "https://n8n.reclad.site/webhook/c82b79e7-a7f4-4527-a0a5-f126d29a93cb" },
+    { "source": "/webhook-regenerate", "destination": "https://n8n.reclad.site/webhook/6c5a5941-63b0-463e-8a16-0c7e08882c72" },
+    { "source": "/webhook-waiting", "destination": "https://n8n.reclad.site/webhook-waiting" },
+    { "source": "/n8n_binary/(.*)", "destination": "https://reclad.site/n8n_binary/$1" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
+
+
