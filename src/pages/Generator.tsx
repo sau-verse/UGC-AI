@@ -306,14 +306,33 @@ const Generator = () => {
 
       console.log('Sending payload to webhook:', payload);
       
-      // Fire-and-forget webhook call - don't wait for response since we use realtime
+      // Enhanced webhook call with better error handling
       fetch('/api/webhook-generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'image/*,application/octet-stream,application/json' },
         body: JSON.stringify(payload),
-      }).catch(error => {
-        console.error('Webhook call failed:', error);
+      })
+      .then(response => {
+        console.log('Webhook response status:', response.status);
+        if (!response.ok) {
+          throw new Error(`Webhook call failed with status ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        console.log('✅ Webhook call successful:', data);
+        // Webhook call succeeded, realtime will handle status updates
+      })
+      .catch(error => {
+        console.error('❌ Webhook call failed:', error);
+        // Show user-friendly error message
+        toast({ 
+          title: "Warning", 
+          description: "Image generation started but there may be delays. Please check back in a few minutes.", 
+          variant: "destructive" 
+        });
         // Don't throw error here - let realtime handle the status updates
+        // The job was created successfully, so we still want to monitor it
       })
       
       toast({ title: "Image generation started! You'll be notified when it's ready." })
@@ -451,7 +470,7 @@ const Generator = () => {
 
       console.log('Sending regeneration payload to webhook:', payload);
 
-      // Fire-and-forget webhook call - don't wait for response since we use realtime
+      // Enhanced regenerate webhook call with better error handling
       fetch('/api/webhook-regenerate', {
         method: 'POST',
         headers: {
@@ -459,9 +478,28 @@ const Generator = () => {
           'Accept': 'image/*,application/octet-stream,application/json',
         },
         body: JSON.stringify(payload),
-      }).catch(error => {
-        console.error('Regeneration webhook call failed:', error);
+      })
+      .then(response => {
+        console.log('Regenerate webhook response status:', response.status);
+        if (!response.ok) {
+          throw new Error(`Regenerate webhook call failed with status ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        console.log('✅ Regenerate webhook call successful:', data);
+        // Webhook call succeeded, realtime will handle status updates
+      })
+      .catch(error => {
+        console.error('❌ Regenerate webhook call failed:', error);
+        // Show user-friendly error message
+        toast({ 
+          title: "Warning", 
+          description: "Image regeneration started but there may be delays. Please check back in a few minutes.", 
+          variant: "destructive" 
+        });
         // Don't throw error here - let realtime handle the status updates
+        // The job was created successfully, so we still want to monitor it
       })
       
       toast({ title: "Image regeneration started! You'll be notified when it's ready." })

@@ -28,21 +28,59 @@ export default async function handler(req, res) {
     const n8nWebhookUrl = 'https://n8n.reclad.site/webhook/c82b79e7-a7f4-4527-a0a5-f126d29a93cb';
     console.log('Forwarding to n8n webhook:', n8nWebhookUrl);
     
-    // Fire-and-forget request to n8n - don't wait for response
-    makeRequest(n8nWebhookUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'image/*,application/octet-stream,application/json'
-      },
-      body: JSON.stringify(payload)
-    }).then(response => {
-      console.log('n8n response status:', response.statusCode);
-      console.log('n8n response headers:', response.headers);
-      console.log('n8n response body length:', response.body ? response.body.length : 0);
-    }).catch(error => {
-      console.error('n8n request failed:', error);
-    });
+    // Make request to n8n with proper error handling and retry logic
+    const maxRetries = 3;
+    let retryCount = 0;
+    
+    const makeWebhookCall = async () => {
+      try {
+        console.log(`Attempting webhook call (attempt ${retryCount + 1}/${maxRetries + 1})`);
+        
+        const response = await makeRequest(n8nWebhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'image/*,application/octet-stream,application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+        
+        console.log('n8n response status:', response.statusCode);
+        console.log('n8n response headers:', response.headers);
+        console.log('n8n response body:', response.body);
+        
+        // Check if the response indicates success
+        if (response.statusCode >= 200 && response.statusCode < 300) {
+          console.log('✅ Webhook call successful');
+          return { success: true, response };
+        } else {
+          throw new Error(`N8N returned status ${response.statusCode}: ${response.body}`);
+        }
+        
+      } catch (error) {
+        console.error(`❌ Webhook call failed (attempt ${retryCount + 1}):`, error.message);
+        
+        if (retryCount < maxRetries) {
+          retryCount++;
+          console.log(`Retrying in 2 seconds... (${retryCount}/${maxRetries})`);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          return makeWebhookCall();
+        } else {
+          throw error;
+        }
+      }
+    };
+    
+    // Execute webhook call and handle result
+    makeWebhookCall()
+      .then(result => {
+        console.log('✅ Final webhook result:', result);
+      })
+      .catch(error => {
+        console.error('❌ All webhook attempts failed:', error);
+        // Log to external service or database for monitoring
+        // You could also update the job status to 'failed' here
+      });
 
     // Return immediately - let realtime handle status updates
     return res.status(200).json({ 
@@ -67,16 +105,25 @@ export default async function handler(req, res) {
 function makeRequest(url, options) {
   return new Promise((resolve, reject) => {
     console.log('Making request to:', url);
-    console.log('Request options:', options);
+    console.log('Request options:', {
+      method: options.method,
+      headers: options.headers,
+      bodyLength: options.body ? options.body.length : 0
+    });
     
     const requestOptions = {
       method: options.method || 'GET',
-      headers: options.headers || {},
-      timeout: 300000 // 5 minutes timeout
+      headers: {
+        ...options.headers,
+        'User-Agent': 'UGC-Generator/1.0'
+      },
+      timeout: 30000 // 30 seconds timeout (reduced from 5 minutes)
     };
 
     const req = https.request(url, requestOptions, (res) => {
-      console.log('Response received:', res.statusCode);
+      console.log('Response received:', res.statusCode, res.statusMessage);
+      console.log('Response headers:', res.headers);
+      
       let data = '';
       
       res.on('data', (chunk) => {
@@ -85,8 +132,11 @@ function makeRequest(url, options) {
       
       res.on('end', () => {
         console.log('Response completed, data length:', data.length);
+        console.log('Response body preview:', data.substring(0, 200));
+        
         resolve({
           statusCode: res.statusCode,
+          statusMessage: res.statusMessage,
           headers: res.headers,
           body: data
         });
@@ -94,18 +144,23 @@ function makeRequest(url, options) {
     });
 
     req.on('error', (error) => {
-      console.error('Request error:', error);
-      reject(error);
+      console.error('Request error:', error.message, error.code);
+      reject(new Error(`Request failed: ${error.message} (${error.code})`));
     });
 
     req.on('timeout', () => {
-      console.error('Request timeout after 5 minutes');
+      console.error('Request timeout after 30 seconds');
       req.destroy();
-      reject(new Error('Request timeout after 5 minutes'));
+      reject(new Error('Request timeout after 30 seconds'));
+    });
+
+    // Handle connection errors
+    req.on('close', () => {
+      console.log('Request connection closed');
     });
 
     if (options.body) {
-      console.log('Writing body to request');
+      console.log('Writing body to request, length:', options.body.length);
       req.write(options.body);
     }
     
