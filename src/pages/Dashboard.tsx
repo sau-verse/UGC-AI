@@ -4,7 +4,6 @@ import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { Plus, Image, Video, Zap, BarChart3, Clock, TrendingUp, Settings } from "lucide-react";
 import Navigation from "@/components/Navigation";
-import DatabaseTest from "@/components/DatabaseTest";
 import { useAuth } from '@/hooks/supabase/useAuth';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
@@ -359,10 +358,6 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Database Test - Temporary */}
-          <div className="mb-8">
-            <DatabaseTest />
-          </div>
 
           {/* Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

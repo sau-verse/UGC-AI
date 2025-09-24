@@ -30,7 +30,7 @@ export async function getJobStatus(jobId: string): Promise<JobStatusResponse> {
     // Fetch the job from the database
     const { data, error } = await supabase
       .from('image_jobs')
-      .select('id, status, image_gen_url, generated_video_url, image_analysis')  // Changed from generated_image_url to image_gen_url
+      .select('id, status, image_gen_url, generated_video_url, image_analysis')
       .eq('id', jobId)
       .eq('user_id', user.id)
       .single()
@@ -55,7 +55,7 @@ export async function getJobStatus(jobId: string): Promise<JobStatusResponse> {
     return {
       id: data.id,
       status: data.status,
-      generated_image_url: data.image_gen_url,  // Changed from generated_image_url to image_gen_url
+      generated_image_url: data.image_gen_url,
       generated_video_url: data.generated_video_url,
       image_analysis: data.image_analysis
     }

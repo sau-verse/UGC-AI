@@ -43,21 +43,31 @@ exports.handler = async (event, context) => {
     const n8nWebhookUrl = 'https://n8n.reclad.site/webhook/c82b79e7-a7f4-4527-a0a5-f126d29a93cb';
     console.log('Forwarding to n8n webhook:', n8nWebhookUrl);
     
-    // Fire-and-forget request to n8n - don't wait for response
-    makeRequest(n8nWebhookUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'image/*,application/octet-stream,application/json'
-      },
-      body: JSON.stringify(payload)
-    }).then(response => {
-      console.log('n8n response status:', response.statusCode);
-      console.log('n8n response headers:', response.headers);
-      console.log('n8n response body length:', response.body ? response.body.length : 0);
-    }).catch(error => {
-      console.error('n8n request failed:', error);
-    });
+    // Make request to n8n with better error handling
+    try {
+      const response = await makeRequest(n8nWebhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'image/*,application/octet-stream,application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+      
+      console.log('✅ n8n response status:', response.statusCode);
+      console.log('✅ n8n response headers:', response.headers);
+      console.log('✅ n8n response body length:', response.body ? response.body.length : 0);
+      console.log('✅ n8n response body preview:', response.body ? response.body.substring(0, 200) : 'No body');
+      
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        console.log('🎉 Webhook call successful to n8n');
+      } else {
+        console.error('❌ n8n returned error status:', response.statusCode, response.body);
+      }
+    } catch (error) {
+      console.error('❌ n8n request failed:', error.message);
+      console.error('❌ Error details:', error);
+    }
 
     // Return immediately - let realtime handle status updates
     return {
@@ -95,17 +105,26 @@ exports.handler = async (event, context) => {
 // Helper function to make HTTP requests with proper timeout handling
 function makeRequest(url, options) {
   return new Promise((resolve, reject) => {
-    console.log('Making request to:', url);
-    console.log('Request options:', options);
+    console.log('🌐 Making request to:', url);
+    console.log('📋 Request options:', {
+      method: options.method,
+      headers: options.headers,
+      bodyLength: options.body ? options.body.length : 0
+    });
     
     const requestOptions = {
       method: options.method || 'GET',
-      headers: options.headers || {},
-      timeout: 300000 // 5 minutes timeout
+      headers: {
+        ...options.headers,
+        'User-Agent': 'UGC-Generator/1.0'
+      },
+      timeout: 30000 // 30 seconds timeout (reduced from 5 minutes)
     };
 
     const req = https.request(url, requestOptions, (res) => {
-      console.log('Response received:', res.statusCode);
+      console.log('📡 Response received:', res.statusCode, res.statusMessage);
+      console.log('📋 Response headers:', res.headers);
+      
       let data = '';
       
       res.on('data', (chunk) => {
@@ -113,9 +132,12 @@ function makeRequest(url, options) {
       });
       
       res.on('end', () => {
-        console.log('Response completed, data length:', data.length);
+        console.log('✅ Response completed, data length:', data.length);
+        console.log('📄 Response body preview:', data.substring(0, 200));
+        
         resolve({
           statusCode: res.statusCode,
+          statusMessage: res.statusMessage,
           headers: res.headers,
           body: data
         });
@@ -123,18 +145,23 @@ function makeRequest(url, options) {
     });
 
     req.on('error', (error) => {
-      console.error('Request error:', error);
-      reject(error);
+      console.error('❌ Request error:', error.message, error.code);
+      reject(new Error(`Request failed: ${error.message} (${error.code})`));
     });
 
     req.on('timeout', () => {
-      console.error('Request timeout after 5 minutes');
+      console.error('⏰ Request timeout after 30 seconds');
       req.destroy();
-      reject(new Error('Request timeout after 5 minutes'));
+      reject(new Error('Request timeout after 30 seconds'));
+    });
+
+    // Handle connection errors
+    req.on('close', () => {
+      console.log('🔌 Request connection closed');
     });
 
     if (options.body) {
-      console.log('Writing body to request');
+      console.log('📤 Writing body to request, length:', options.body.length);
       req.write(options.body);
     }
     

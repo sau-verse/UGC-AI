@@ -236,8 +236,8 @@ const Generator = () => {
           console.log('FormData prepared with imageFile field');
           
           // Send to the converter endpoint through proxy
-          console.log('Sending request to /api/image-converter');
-          const converterResponse = await fetch('/api/image-converter', {
+          console.log('Sending request to /n8n_binary/n8n-to-url-converter.php');
+          const converterResponse = await fetch('/n8n_binary/n8n-to-url-converter.php', {
             method: 'POST',
             body: formData
           });
@@ -307,7 +307,7 @@ const Generator = () => {
       console.log('Sending payload to webhook:', payload);
       
       // Enhanced webhook call with better error handling
-      fetch('/api/webhook-generate', {
+      fetch('/webhook-generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'image/*,application/octet-stream,application/json' },
         body: JSON.stringify(payload),
@@ -398,8 +398,8 @@ const Generator = () => {
           console.log('FormData prepared with imageFile field');
           
           // Send to the converter endpoint through proxy
-          console.log('Sending request to /api/image-converter');
-          const converterResponse = await fetch('/api/image-converter', {
+          console.log('Sending request to /n8n_binary/n8n-to-url-converter.php');
+          const converterResponse = await fetch('/n8n_binary/n8n-to-url-converter.php', {
             method: 'POST',
             body: formData
           });
@@ -472,7 +472,7 @@ const Generator = () => {
       console.log('Sending regeneration payload to webhook:', payload);
 
       // Enhanced regenerate webhook call with better error handling
-      fetch('/api/webhook-regenerate', {
+      fetch('/webhook-regenerate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

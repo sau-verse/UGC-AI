@@ -20,8 +20,12 @@ export async function updateJobAPI(request: Request): Promise<Response> {
       )
     }
     
+    // Remove image_analysis from the job data to prevent JSON parsing errors
+    // Image analysis is already stored in Supabase and doesn't need to be sent via webhook
+    const { image_analysis, ...jobDataWithoutAnalysis } = jobData
+    
     // Update the job
-    const result = await updateJob(jobData)
+    const result = await updateJob(jobDataWithoutAnalysis)
     
     if (!result.success) {
       return new Response(
@@ -50,3 +54,4 @@ export async function updateJobAPI(request: Request): Promise<Response> {
 //   "status": "processing",
 //   "generated_image_url": "https://example.com/image.jpg"
 // }
+// Note: Do NOT include image_analysis in the payload as it causes JSON parsing errors

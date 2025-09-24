@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS public.image_jobs (
     CHECK (status IN ('queued', 'processing', 'done', 'failed')),
 
   -- Outputs
-  generated_image_url TEXT, -- final generated image
+  image_gen_url TEXT, -- final generated image
 
   -- Error handling
   error_message TEXT, -- useful for debugging failed jobs

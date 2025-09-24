@@ -38,7 +38,7 @@ export async function createJob(jobData: CreateJobRequest): Promise<CreateJobRes
       user_id: user.id,
       prompt: jobData.prompt,
       aspect_ratio: jobData.aspect_ratio,
-      input_image_url: jobData.input_image, // Changed from input_image to input_image_url to match the database schema
+      input_image: jobData.input_image, // Match the database schema field name
       status: 'queued'
     };
     

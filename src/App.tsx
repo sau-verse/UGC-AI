@@ -19,6 +19,7 @@ const SupabaseTest = lazy(() => import("./pages/SupabaseTest"));
 const SchemaRefresh = lazy(() => import("./pages/SchemaRefresh"));
 const TestSupabase = lazy(() => import("./pages/TestSupabase"));
 const TestDataFetch = lazy(() => import("./pages/TestDataFetch"));
+const WebhookTest = lazy(() => import("./pages/WebhookTest"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -78,6 +79,7 @@ const App = () => {
                     <TestDataFetch />
                   </ProtectedRoute>
                 } />
+                <Route path="/test-webhook" element={<WebhookTest />} />
 
                 <Route path="/projects" element={
                   <ProtectedRoute>

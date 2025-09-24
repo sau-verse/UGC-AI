@@ -115,10 +115,67 @@ export default defineConfig(({ mode }) => ({
           });
         },
       },
-      '/api': {
+      '/api/webhook-generate': {
         target: 'https://n8n.reclad.site',
         changeOrigin: true,
         secure: true,
+        timeout: 0, // No timeout - wait indefinitely
+        proxyTimeout: 0, // No proxy timeout
+        logLevel: 'debug',
+        rewrite: (path) => path.replace(/^\/api\/webhook-generate/, '/webhook/c82b79e7-a7f4-4527-a0a5-f126d29a93cb'),
+        configure: (proxy, options) => {
+          proxy.on('error', (err, req, res) => {
+            console.log('API webhook-generate proxy error:', err);
+          });
+          proxy.on('proxyReq', (proxyReq, req, res) => {
+            console.log('Proxying API webhook-generate request:', req.method, req.url);
+            // Remove any timeout headers
+            proxyReq.removeHeader('timeout');
+          });
+          proxy.on('proxyRes', (proxyRes, req, res) => {
+            console.log('API webhook-generate proxy response:', proxyRes.statusCode, req.url);
+          });
+        },
+      },
+      '/api/webhook-regenerate': {
+        target: 'https://n8n.reclad.site',
+        changeOrigin: true,
+        secure: true,
+        timeout: 0, // No timeout - wait indefinitely
+        proxyTimeout: 0, // No proxy timeout
+        logLevel: 'debug',
+        rewrite: (path) => path.replace(/^\/api\/webhook-regenerate/, '/webhook/6c5a5941-63b0-463e-8a16-0c7e08882c72'),
+        configure: (proxy, options) => {
+          proxy.on('error', (err, req, res) => {
+            console.log('API webhook-regenerate proxy error:', err);
+          });
+          proxy.on('proxyReq', (proxyReq, req, res) => {
+            console.log('Proxying API webhook-regenerate request:', req.method, req.url);
+            // Remove any timeout headers
+            proxyReq.removeHeader('timeout');
+          });
+          proxy.on('proxyRes', (proxyRes, req, res) => {
+            console.log('API webhook-regenerate proxy response:', proxyRes.statusCode, req.url);
+          });
+        },
+      },
+      '/api/image-converter': {
+        target: 'https://reclad.site',
+        changeOrigin: true,
+        secure: true,
+        logLevel: 'debug',
+        rewrite: (path) => path.replace(/^\/api\/image-converter/, '/n8n_binary/n8n-to-url-converter.php'),
+        configure: (proxy, options) => {
+          proxy.on('error', (err, req, res) => {
+            console.log('API image-converter proxy error:', err);
+          });
+          proxy.on('proxyReq', (proxyReq, req, res) => {
+            console.log('Proxying API image-converter request:', req.method, req.url);
+          });
+          proxy.on('proxyRes', (proxyRes, req, res) => {
+            console.log('API image-converter proxy response:', proxyRes.statusCode, req.url);
+          });
+        },
       },
       '/n8n_binary': {
         target: 'https://reclad.site',

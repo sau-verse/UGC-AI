@@ -30,7 +30,7 @@ export async function updateJob(jobData: UpdateJobRequest): Promise<UpdateJobRes
     // Prepare the update object with only the fields that are provided
     const updateObject: Record<string, unknown> = {}
     if (jobData.status) updateObject.status = jobData.status
-    if (jobData.generated_image_url) updateObject.image_gen_url = jobData.generated_image_url  // Changed from generated_image_url to image_gen_url
+    if (jobData.generated_image_url) updateObject.image_gen_url = jobData.generated_image_url
     if (jobData.generated_video_url) updateObject.generated_video_url = jobData.generated_video_url
     if (jobData.image_analysis) updateObject.image_analysis = jobData.image_analysis
     
