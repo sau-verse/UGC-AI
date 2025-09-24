@@ -73,28 +73,22 @@ export default async function handler(req, res) {
       }
     };
     
-    // Execute webhook call and track status
-    let webhookStatus = 'pending';
-    let webhookError = null;
-    
+    // Execute webhook call as fire-and-forget (realtime handles status updates)
     makeWebhookCall()
       .then(result => {
         console.log('✅ Final webhook result:', result);
-        webhookStatus = 'success';
+        console.log('🎉 N8N webhook call completed successfully');
       })
       .catch(error => {
         console.error('❌ All webhook attempts failed:', error);
-        webhookStatus = 'failed';
-        webhookError = error.message;
+        console.error('💥 N8N webhook call failed:', error.message);
       });
 
-    // Return immediately with webhook status - let realtime handle status updates
+    // Return immediately - let realtime handle status updates
     return res.status(200).json({ 
       success: true, 
       message: 'Image generation started',
-      jobId: payload.id,
-      webhookStatus: webhookStatus,
-      webhookError: webhookError
+      jobId: payload.id
     });
 
   } catch (error) {

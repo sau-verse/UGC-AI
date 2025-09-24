@@ -321,19 +321,7 @@ const Generator = () => {
       })
       .then(data => {
         console.log('✅ Webhook call successful:', data);
-        // Check webhook status
-        if (data.webhookStatus === 'success') {
-          console.log('✅ N8N webhook triggered successfully');
-        } else if (data.webhookStatus === 'failed') {
-          console.error('❌ N8N webhook failed:', data.webhookError);
-          toast({ 
-            title: "Warning", 
-            description: `N8N webhook failed: ${data.webhookError}. Image generation may be delayed.`, 
-            variant: "destructive" 
-          });
-        } else {
-          console.log('⏳ N8N webhook status: pending');
-        }
+        console.log('🎯 Image generation started - realtime will handle status updates');
         // Webhook call succeeded, realtime will handle status updates
       })
       .catch(error => {
@@ -501,19 +489,7 @@ const Generator = () => {
       })
       .then(data => {
         console.log('✅ Regenerate webhook call successful:', data);
-        // Check webhook status
-        if (data.webhookStatus === 'success') {
-          console.log('✅ N8N regenerate webhook triggered successfully');
-        } else if (data.webhookStatus === 'failed') {
-          console.error('❌ N8N regenerate webhook failed:', data.webhookError);
-          toast({ 
-            title: "Warning", 
-            description: `N8N regenerate webhook failed: ${data.webhookError}. Image regeneration may be delayed.`, 
-            variant: "destructive" 
-          });
-        } else {
-          console.log('⏳ N8N regenerate webhook status: pending');
-        }
+        console.log('🎯 Image regeneration started - realtime will handle status updates');
         // Webhook call succeeded, realtime will handle status updates
       })
       .catch(error => {
