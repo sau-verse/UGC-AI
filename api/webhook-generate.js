@@ -34,7 +34,9 @@ export default async function handler(req, res) {
     
     const makeWebhookCall = async () => {
       try {
-        console.log(`Attempting webhook call (attempt ${retryCount + 1}/${maxRetries + 1})`);
+        console.log(`🔄 Attempting webhook call (attempt ${retryCount + 1}/${maxRetries + 1})`);
+        console.log('📤 Sending to N8N:', n8nWebhookUrl);
+        console.log('📦 Payload:', JSON.stringify(payload, null, 2));
         
         const response = await makeRequest(n8nWebhookUrl, {
           method: 'POST',
@@ -45,9 +47,9 @@ export default async function handler(req, res) {
           body: JSON.stringify(payload)
         });
         
-        console.log('n8n response status:', response.statusCode);
-        console.log('n8n response headers:', response.headers);
-        console.log('n8n response body:', response.body);
+        console.log('📥 N8N response status:', response.statusCode);
+        console.log('📋 N8N response headers:', response.headers);
+        console.log('📄 N8N response body:', response.body);
         
         // Check if the response indicates success
         if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -62,7 +64,7 @@ export default async function handler(req, res) {
         
         if (retryCount < maxRetries) {
           retryCount++;
-          console.log(`Retrying in 2 seconds... (${retryCount}/${maxRetries})`);
+          console.log(`⏳ Retrying in 2 seconds... (${retryCount}/${maxRetries})`);
           await new Promise(resolve => setTimeout(resolve, 2000));
           return makeWebhookCall();
         } else {
@@ -71,23 +73,31 @@ export default async function handler(req, res) {
       }
     };
     
-    // Execute webhook call and handle result
-    makeWebhookCall()
-      .then(result => {
-        console.log('✅ Final webhook result:', result);
-      })
-      .catch(error => {
-        console.error('❌ All webhook attempts failed:', error);
-        // Log to external service or database for monitoring
-        // You could also update the job status to 'failed' here
+    // Execute webhook call and wait for result
+    try {
+      const result = await makeWebhookCall();
+      console.log('✅ Final webhook result:', result);
+      
+      // Return success response
+      return res.status(200).json({ 
+        success: true, 
+        message: 'Image generation started',
+        jobId: payload.id,
+        webhookStatus: 'success'
       });
-
-    // Return immediately - let realtime handle status updates
-    return res.status(200).json({ 
-      success: true, 
-      message: 'Image generation started',
-      jobId: payload.id
-    });
+      
+    } catch (error) {
+      console.error('❌ All webhook attempts failed:', error);
+      
+      // Return error response but don't fail the request
+      return res.status(200).json({ 
+        success: true, 
+        message: 'Image generation started (webhook may have delays)',
+        jobId: payload.id,
+        webhookStatus: 'failed',
+        webhookError: error.message
+      });
+    }
 
   } catch (error) {
     console.error('Error processing webhook:', error);
