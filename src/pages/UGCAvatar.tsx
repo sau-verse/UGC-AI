@@ -145,13 +145,10 @@ const UGCAvatar = () => {
         timestamp: new Date().toISOString(),
       };
 
-      // Call the new image generation webhook URL
-      const response = await fetch('https://n8n.reclad.site/webhook/c82b79e7-a7f4-4527-a0a5-f126d29a93cb', {
+      // Call the new image generation webhook URL via Vercel rewrite
+      const response = await fetch('/webhook-generate', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'image/*,application/octet-stream,application/json',
-        },
+        headers: { 'Content-Type': 'application/json', 'Accept': 'image/*,application/octet-stream,application/json' },
         body: JSON.stringify(payload),
       });
 
@@ -278,13 +275,10 @@ const UGCAvatar = () => {
 
       console.log('Sending regeneration payload to webhook:', payload);
 
-      // Call the new regeneration webhook URL
-      const response = await fetch('https://n8n.reclad.site/webhook/6c5a5941-63b0-463e-8a16-0c7e08882c72', {
+      // Call the new regeneration webhook URL via Vercel rewrite
+      const response = await fetch('/webhook-regenerate', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'image/*,application/octet-stream,application/json',
-        },
+        headers: { 'Content-Type': 'application/json', 'Accept': 'image/*,application/octet-stream,application/json' },
         body: JSON.stringify(payload),
       });
 
@@ -327,8 +321,8 @@ const UGCAvatar = () => {
         timestamp: new Date().toISOString(),
       };
 
-      // Call the video generation webhook URL
-      const response = await fetch('https://n8n.reclad.site/webhook/c82b79e7-a7f4-4527-a0a5-f126d29a93cb', {
+      // Call the video generation webhook URL via Vercel rewrite
+      const response = await fetch('/webhook-generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify(payload),
