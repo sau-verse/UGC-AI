@@ -3,7 +3,7 @@
 ## 🚀 Production URLs
 
 - **Production URL**: https://ugcgen-ai.vercel.app/
-- **Deployment Domain**: https://ugcgen-ai-git-final-sau-verse.vercel.app/
+- **Deployment Domain**: https://ugcgen-ai-sau-verse.vercel.app/
 
 ## 📋 Pre-Deployment Checklist
 
@@ -42,7 +42,7 @@ If you have any environment variables, add them in the Vercel dashboard:
 
 ### 3. Domain Configuration
 - Your production domain is already configured: `ugcgen-ai.vercel.app`
-- The deployment domain will be: `ugcgen-ai-git-final-sau-verse.vercel.app`
+- The deployment domain will be: `ugcgen-ai-sau-verse.vercel.app`
 
 ## 🔍 Testing Your Deployment
 
