@@ -11,11 +11,32 @@
     {
       "source": "/api/(.*)",
       "destination": "/api/$1"
+    },
+    {
+      "source": "/n8n_binary/n8n-to-url-converter.php",
+      "destination": "https://reclad.site/n8n_binary/n8n-to-url-converter.php"
     }
   ],
   "headers": [
     {
       "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "POST, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type"
+        }
+      ]
+    },
+    {
+      "source": "/n8n_binary/(.*)",
       "headers": [
         {
           "key": "Access-Control-Allow-Origin",
