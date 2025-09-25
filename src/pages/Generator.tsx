@@ -323,6 +323,7 @@ const Generator = () => {
       const userId = user?.id;
 
       const payload: Record<string, unknown> = {
+        id: created.jobId,
         prompt: prompt.trim(),
         aspect_ratio: selectedFormat,
         input_image_url: imageUrl,

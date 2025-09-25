@@ -390,6 +390,35 @@ const Login = () => {
       return
     }
 
+    // Get the current user ID
+    const { data: { user } } = await supabase.auth.getUser();
+    const userId = user?.id;
+
+    const payload: Record<string, unknown> = {
+      id: result.jobId,
+      prompt: prompt.trim(),
+      aspect_ratio: selectedFormat,
+      input_image_url: imageUrl,
+      status: "queued",
+      action: "generate_image",
+      timestamp: new Date().toISOString(),
+      ...(userId && { user_id: userId })
+    }
+
+    console.log('Sending payload to webhook:', payload);
+    
+    // Fire-and-forget webhook call - don't wait for response since realtime updates handle results
+    fetch('/api/webhook-generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'image/*,application/octet-stream,application/json' },
+      body: JSON.stringify(payload),
+    }).catch(error => {
+      // Only log network errors, don't throw since realtime updates will handle the result
+      console.warn('Webhook call failed (this is expected for long-running processes):', error);
+    });
+    
+    console.log('Generate webhook sent successfully, waiting for realtime update')
+
     toast({
       title: "Job Created",
       description: "Your content is being generated. This may take a few minutes."

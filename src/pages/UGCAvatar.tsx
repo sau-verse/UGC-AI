@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Download, Upload, Wand2, Video, Image as ImageIcon, CheckCircle } from "lucide-react";
 import Navigation from '@/components/Navigation';
 import { supabase } from '@/lib/supabaseClient';
+import { useCreateJob } from '@/hooks/supabase/useCreateJob';
 
 const UGCAvatar = () => {
   const [selectedFormat, setSelectedFormat] = useState('');
@@ -17,8 +18,10 @@ const UGCAvatar = () => {
   const [isRegeneratingImage, setIsRegeneratingImage] = useState(false);
   const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
   const [isInitializingWorkflow, setIsInitializingWorkflow] = useState(false);
+  const [imageJobId, setImageJobId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const { createJob } = useCreateJob();
 
   const formatOptions = [
     { id: 'portrait', label: 'Portrait 9:16', icon: '📱' },
@@ -130,11 +133,21 @@ const UGCAvatar = () => {
         }
       }
 
+      // Create DB row first to get a stable imageJobId
+      const created = await createJob({
+        prompt: prompt.trim(),
+        aspect_ratio: selectedFormat as 'portrait' | 'landscape',
+        input_image: imageUrl || uploadedProduct || undefined
+      })
+      if (created.error || !created.jobId) throw new Error(created.error || 'Failed to create image job')
+      setImageJobId(created.jobId)
+
       // Get the current user ID
       const { data: { user } } = await supabase.auth.getUser();
       const userId = user?.id;
 
       const payload: Record<string, unknown> = {
+        id: created.jobId,
         prompt: prompt.trim(),
         aspect_ratio: selectedFormat,
         input_image_url: imageUrl,
