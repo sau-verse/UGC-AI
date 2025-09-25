@@ -15,6 +15,10 @@
     {
       "source": "/n8n_binary/n8n-to-url-converter.php",
       "destination": "https://reclad.site/n8n_binary/n8n-to-url-converter.php"
+    },
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
     }
   ],
   "headers": [
