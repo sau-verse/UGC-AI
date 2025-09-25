@@ -44,48 +44,42 @@ export default defineConfig(({ mode }) => ({
     port: 8080, // Changed to 8080 as requested
     strictPort: false, // Changed to false to allow fallback to another port if 3000 is also busy
     proxy: {
-      '/webhook-generate': {
-        target: 'https://n8n.reclad.site',
+      '/api/webhook-generate': {
+        target: 'http://localhost:3000',
         changeOrigin: true,
-        secure: true,
-        timeout: 0, // No timeout - wait indefinitely
-        proxyTimeout: 0, // No proxy timeout
+        secure: false,
+        timeout: 300000, // 5 minutes timeout
+        proxyTimeout: 300000, // 5 minutes proxy timeout
         logLevel: 'debug',
-        rewrite: (path) => path.replace(/^\/webhook-generate/, '/webhook/c82b79e7-a7f4-4527-a0a5-f126d29a93cb'),
         configure: (proxy, options) => {
           proxy.on('error', (err, req, res) => {
-            console.log('Proxy error:', err);
+            console.log('API proxy error:', err);
           });
           proxy.on('proxyReq', (proxyReq, req, res) => {
-            console.log('Proxying request:', req.method, req.url);
-            // Remove any timeout headers
-            proxyReq.removeHeader('timeout');
+            console.log('Proxying API request:', req.method, req.url);
           });
           proxy.on('proxyRes', (proxyRes, req, res) => {
-            console.log('Proxy response:', proxyRes.statusCode, req.url);
+            console.log('API proxy response:', proxyRes.statusCode, req.url);
           });
         },
       },
 
-      '/webhook-regenerate': {
-        target: 'https://n8n.reclad.site',
+      '/api/webhook-regenerate': {
+        target: 'http://localhost:3000',
         changeOrigin: true,
-        secure: true,
-        timeout: 0, // No timeout - wait indefinitely
-        proxyTimeout: 0, // No proxy timeout
+        secure: false,
+        timeout: 300000, // 5 minutes timeout
+        proxyTimeout: 300000, // 5 minutes proxy timeout
         logLevel: 'debug',
-        rewrite: (path) => path.replace(/^\/webhook-regenerate/, '/webhook/6c5a5941-63b0-463e-8a16-0c7e08882c72'),
         configure: (proxy, options) => {
           proxy.on('error', (err, req, res) => {
-            console.log('Proxy error:', err);
+            console.log('API proxy error:', err);
           });
           proxy.on('proxyReq', (proxyReq, req, res) => {
-            console.log('Proxying request:', req.method, req.url);
-            // Remove any timeout headers
-            proxyReq.removeHeader('timeout');
+            console.log('Proxying API request:', req.method, req.url);
           });
           proxy.on('proxyRes', (proxyRes, req, res) => {
-            console.log('Proxy response:', proxyRes.statusCode, req.url);
+            console.log('API proxy response:', proxyRes.statusCode, req.url);
           });
         },
       },

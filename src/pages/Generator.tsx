@@ -38,6 +38,7 @@ const Generator = () => {
   const { job: imageJobStatus } = useImageJobStatusRealtime(imageJobId)
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const shownToastsRef = useRef<Set<string>>(new Set());
+  const isRegeneratingRef = useRef(false);
 
   // Fake progress states
   const [fakeProgressStage, setFakeProgressStage] = useState<'preparing' | 'generating' | 'finalizing' | 'waiting' | null>(null);
@@ -81,14 +82,61 @@ const Generator = () => {
 
   // Watch image job realtime updates and reflect generated image
   useEffect(() => {
+    console.log('Image job status effect triggered:', imageJobStatus?.status, 'isRegeneratingRef:', isRegeneratingRef.current)
+    
     if (imageJobStatus?.status === 'done') {
       const url = imageJobStatus.generated_image_url || imageJobStatus.image_gen_url
       if (url) {
         setGeneratedPhoto(url)
         setIsImageLoading(false)
+        setIsGeneratingImage(false)
+        setIsRegeneratingImage(false)
+        
+        // Show success toast for regeneration (3 seconds duration)
+        if (isRegeneratingRef.current) {
+          toast({
+            title: "Image regenerated successfully!",
+            description: "Your new AI image is ready.",
+            duration: 3000, // 3 seconds
+          })
+        } else {
+          // Show success toast for initial generation
+          toast({
+            title: "Image generated successfully!",
+            description: "Your AI image is ready.",
+            duration: 3000, // 3 seconds
+          })
+        }
+        
+        isRegeneratingRef.current = false
+      }
+    } else if (imageJobStatus?.status === 'failed') {
+      // Show error toast for regeneration failure
+      if (isRegeneratingRef.current) {
+        toast({
+          title: "Regeneration failed",
+          description: "Failed to regenerate image. Please try again.",
+          variant: "destructive",
+          duration: 5000, // 5 seconds
+        })
+      }
+      
+      // Stop loading states if image generation failed
+      setIsImageLoading(false)
+      setIsGeneratingImage(false)
+      setIsRegeneratingImage(false)
+      isRegeneratingRef.current = false
+    } else if (imageJobStatus?.status === 'processing') {
+      // Show processing toast for regeneration
+      if (isRegeneratingRef.current) {
+        toast({
+          title: "Processing regeneration...",
+          description: "Your image is being processed.",
+          duration: 2000, // 2 seconds
+        })
       }
     }
-  }, [imageJobStatus])
+  }, [imageJobStatus, toast]) // Removed isRegeneratingImage and isGeneratingImage from dependencies
 
   const formatOptions = [
     { id: 'portrait', label: 'Portrait 9:16', icon: '📱' },
@@ -192,7 +240,8 @@ const Generator = () => {
     setIsImageLoading(true)
     toast({
       title: "Generating image...",
-      description: "We’re creating your AI image. This may take a moment.",
+      description: "We're creating your AI image. This may take 30 to 45 sec.",
+      duration: 30000, // 30 seconds
     })
     
     try {
@@ -284,17 +333,21 @@ const Generator = () => {
       if (imageUrl) payload.image_url = imageUrl; else payload.image_data_url = uploadedProduct;
 
       console.log('Sending payload to webhook:', payload);
-      const response = await fetch('/webhook-generate', {
+      
+      // Fire-and-forget webhook call - don't wait for response since realtime updates handle results
+      fetch('/api/webhook-generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'image/*,application/octet-stream,application/json' },
         body: JSON.stringify(payload),
-      })
-      if (!response.ok) throw new Error(`HTTP ${response.status}`)
-      toast({ title: "Success! UGC AI Image is created." })
+      }).catch(error => {
+        // Only log network errors, don't throw since realtime updates will handle the result
+        console.warn('Webhook call failed (this is expected for long-running processes):', error);
+      });
+      
+      console.log('Generate webhook sent successfully, waiting for realtime update')
     } catch (err) {
       toast({ title: "Error", description: "Failed to generate photo.", variant: "destructive" })
       setGeneratedPhoto(null)
-    } finally {
       setIsGeneratingImage(false)
       setIsImageLoading(false)
     }
@@ -314,12 +367,21 @@ const Generator = () => {
       toast({ title: "Prompt Required", description: "Enter a prompt.", variant: "destructive" })
       return
     }
+    if (!imageJobId) {
+      toast({ title: "No Image to Regenerate", description: "Please generate an image first.", variant: "destructive" })
+      return
+    }
 
+    // Set regeneration state immediately to show animation
+    console.log('Setting regeneration states: isRegeneratingImage=true, isImageLoading=true')
+    isRegeneratingRef.current = true
     setIsRegeneratingImage(true)
-    setIsImageLoading(true)
+    setIsImageLoading(true) // Also set image loading to show the overlay
+    
     toast({
       title: "Regenerating image...",
-      description: "We're creating your AI image. This may take a moment.",
+      description: "We're creating your AI image. This may take 30 to 45 sec.",
+      duration: 30000, // 30 seconds
     })
     
     try {
@@ -388,6 +450,9 @@ const Generator = () => {
         }
       }
 
+      // Store the original image job ID before creating a new one
+      const originalImageJobId = imageJobId;
+
       // Create a new DB row for regeneration (like generate flow)
       const created = await createJob({
         prompt: prompt.trim(),
@@ -407,6 +472,8 @@ const Generator = () => {
         aspect_ratio: selectedFormat,
         input_image_url: imageUrl,
         status: "queued",
+        // Include the original image job ID that is being regenerated
+        original_image_job_id: originalImageJobId,
         // Include the user ID in the payload
         ...(userId && { user_id: userId }),
         timestamp: new Date().toISOString(),
@@ -415,25 +482,25 @@ const Generator = () => {
 
       console.log('Sending regeneration payload to webhook:', payload);
 
-      // Call the regeneration webhook through proxy to avoid CORS issues
-      const response = await fetch('/webhook-regenerate', {
+      // Fire-and-forget webhook call - don't wait for response since realtime updates handle results
+      fetch('/api/webhook-regenerate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'image/*,application/octet-stream,application/json',
         },
         body: JSON.stringify(payload),
-      })
+      }).catch(error => {
+        // Only log network errors, don't throw since realtime updates will handle the result
+        console.warn('Regeneration webhook call failed (this is expected for long-running processes):', error);
+      });
 
-      if (!response.ok) throw new Error(`HTTP ${response.status}`)
-      
-      toast({ title: "Success! UGC AI Image is created." })
+      console.log('Regeneration webhook sent successfully, waiting for realtime update')
     } catch (err) {
       toast({ title: "Error", description: "Failed to regenerate photo.", variant: "destructive" })
-      setGeneratedPhoto(null)
-    } finally {
       setIsRegeneratingImage(false)
-      setIsImageLoading(false)
+      setIsImageLoading(false) // Reset image loading state on error
+      isRegeneratingRef.current = false
     }
   }
 
@@ -898,10 +965,12 @@ const Generator = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="aspect-[4/3] bg-muted rounded-lg border border-input overflow-hidden flex items-center justify-center min-h-80">
-                    {isImageLoading ? (
+                    {isImageLoading && !generatedPhoto ? (
                       <div className="flex flex-col items-center gap-3">
                         <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
-                        <p className="text-foreground font-medium">Generating your image...</p>
+                        <p className="text-foreground font-medium">
+                          Generating your image...
+                        </p>
                       </div>
                     ) : generatedPhoto ? (
                       <div className="relative w-full h-full">
@@ -911,6 +980,18 @@ const Generator = () => {
                           className="w-full h-full object-contain cursor-pointer"
                           onClick={openLightbox}
                         />
+                        {/* Regeneration overlay - show when regenerating */}
+                        {(() => {
+                          console.log('Regeneration overlay check - isRegeneratingImage:', isRegeneratingImage)
+                          return isRegeneratingImage
+                        })() && (
+                          <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center">
+                            <div className="animate-spin h-8 w-8 border-4 border-white border-t-transparent rounded-full" />
+                            <p className="text-white font-medium mt-3">
+                              Regenerating your image...
+                            </p>
+                          </div>
+                        )}
                         <Button
                           onClick={handleDownloadPhoto}
                           size="icon"
@@ -934,7 +1015,7 @@ const Generator = () => {
               <div className="flex justify-end gap-3">
                 <Button
                   onClick={handleRegenerateImage}
-                  disabled={!generatedPhoto || isRegeneratingImage}
+                  disabled={!imageJobId || isRegeneratingImage}
                   variant="outline"
                   className="h-12 px-6 border-primary text-primary hover:bg-primary/10 transition-smooth disabled:opacity-50 disabled:cursor-not-allowed hover-lift"
                 >
@@ -953,10 +1034,10 @@ const Generator = () => {
                 
                 <Button
                   onClick={handleGenerateVideo}
-                  disabled={!generatedPhoto || isGeneratingVideo || videoJobStatus?.status === 'queued' || videoJobStatus?.status === 'processing'}
+                  disabled={!generatedPhoto || isGeneratingVideo || ((videoJobStatus?.status === 'queued' || videoJobStatus?.status === 'processing') && !generatedVideo)}
                   className="h-12 px-6 bg-gradient-primary text-primary-foreground hover:opacity-90 shadow-glow transition-smooth disabled:opacity-50 disabled:cursor-not-allowed hover-lift"
                 >
-                  {isGeneratingVideo || videoJobStatus?.status === 'queued' || videoJobStatus?.status === 'processing' ? (
+                  {(isGeneratingVideo || ((videoJobStatus?.status === 'queued' || videoJobStatus?.status === 'processing') && !generatedVideo)) ? (
                     <div className="flex items-center gap-3">
                       <div className="animate-spin h-5 w-5 border-2 border-primary-foreground border-t-transparent rounded-full" />
                       {videoJobStatus?.status === 'queued' ? 'Queued...' : videoJobStatus?.status === 'processing' ? 'Processing...' : 'Creating Video...'}
@@ -971,9 +1052,7 @@ const Generator = () => {
               </div>
 
               {/* Video Preview Area */}
-              {(() => {
-                console.log('Checking video preview area render conditions:', { videoJobId, generatedVideo });
-                return videoJobId && (
+              {videoJobId && (
                   <Card className="shadow-soft border-0 hover-lift mt-6">
                     <CardHeader className="pb-4">
                       <CardTitle className="text-foreground text-2xl font-bold flex items-center gap-2">
@@ -983,8 +1062,8 @@ const Generator = () => {
                     </CardHeader>
                     <CardContent>
                       <div className="aspect-[4/3] bg-muted rounded-lg border border-input overflow-hidden flex items-center justify-center min-h-80">
-                        {/* Show status if video is being generated */}
-                        {(videoJobStatus?.status === 'queued' || videoJobStatus?.status === 'processing') && (
+                        {/* Show status if video is being generated and no video is available yet */}
+                        {(videoJobStatus?.status === 'queued' || videoJobStatus?.status === 'processing') && !generatedVideo && (
                           <div className="flex flex-col items-center gap-4 p-6">
                             <div className="flex items-center gap-2">
                               <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -1012,8 +1091,8 @@ const Generator = () => {
                           </div>
                         )}
                         
-                        {/* Show error if video generation failed */}
-                        {videoJobStatus?.status === 'failed' && (
+                        {/* Show error if video generation failed and no video is available */}
+                        {videoJobStatus?.status === 'failed' && !generatedVideo && (
                           <div className="flex flex-col items-center gap-4 p-6">
                             <AlertCircle className="h-12 w-12 text-destructive" />
                             <span className="text-lg font-medium text-destructive">Generation Failed</span>
@@ -1030,40 +1109,30 @@ const Generator = () => {
                           </div>
                         )}
                         
-                        {/* Show video when done */}
-                        {(() => {
-                          console.log('Checking if video should be displayed:', { generatedVideo, videoJobStatus });
-                          if (generatedVideo) {
-                            console.log('Displaying video with URL:', generatedVideo);
-                            return (
-                              <div className="relative w-full h-full">
-                                <video
-                                  src={generatedVideo}
-                                  controls
-                                  className="w-full h-full object-contain rounded-lg"
-                                  poster={generatedPhoto || undefined}
-                                >
-                                  Your browser does not support the video tag.
-                                </video>
-                                <Button
-                                  onClick={handleDownloadVideo}
-                                  size="icon"
-                                  className="absolute top-3 right-3 h-10 w-10 bg-background/80 hover:bg-background text-foreground rounded-lg border border-input shadow-lg opacity-80 hover:opacity-100 transition-smooth"
-                                >
-                                  <Download className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            );
-                          } else {
-                            console.log('Not displaying video - no URL available');
-                            return null;
-                          }
-                        })()}
+                        {/* Show video when available */}
+                        {generatedVideo && (
+                          <div className="relative w-full h-full">
+                            <video
+                              src={generatedVideo}
+                              controls
+                              className="w-full h-full object-contain rounded-lg"
+                              poster={generatedPhoto || undefined}
+                            >
+                              Your browser does not support the video tag.
+                            </video>
+                            <Button
+                              onClick={handleDownloadVideo}
+                              size="icon"
+                              className="absolute top-3 right-3 h-10 w-10 bg-background/80 hover:bg-background text-foreground rounded-lg border border-input shadow-lg opacity-80 hover:opacity-100 transition-smooth"
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
-                );
-              })()}
+                )}
 
             </div>
           </div>
