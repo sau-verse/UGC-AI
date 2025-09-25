@@ -18,7 +18,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const payload = req.body;
-    console.log('Received regenerate payload:', payload);
+    console.log('Received regenerate payload:', JSON.stringify(payload, null, 2));
+
+    // Transform the payload to match n8n workflow expectations
+    const transformedPayload = {
+      ...payload,
+      // Map input_image_url to image_url for n8n workflow
+      image_url: payload.input_image_url,
+      // Remove the original input_image_url field to avoid confusion
+      input_image_url: undefined
+    };
+    
+    // Remove undefined fields
+    Object.keys(transformedPayload).forEach(key => {
+      if (transformedPayload[key] === undefined) {
+        delete transformedPayload[key];
+      }
+    });
+
+    console.log('Transformed regenerate payload:', JSON.stringify(transformedPayload, null, 2));
 
     // Forward the request to the n8n webhook
     const n8nWebhookUrl = 'https://n8n.reclad.site/webhook/6c5a5941-63b0-463e-8a16-0c7e08882c72';
@@ -29,7 +47,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         'Content-Type': 'application/json',
         'Accept': 'image/*,application/octet-stream,application/json'
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(transformedPayload),
       // Add timeout for long-running processes
       signal: AbortSignal.timeout(300000) // 5 minutes timeout
     });
